@@ -757,8 +757,8 @@
                 <div class="seccion config-box">
                     <h2>🔒 PIN Y CONTROL DE BORRADO</h2>
                     <div class="form-grupo">
-                        <label>PIN de acceso Padres:</label>
-                        <input type="password" id="cfg-pin-seguridad" value="18681" onchange="actualizarPinSeguridad(this)">
+                        <label>Nuevo PIN de acceso Padres:</label>
+                        <input type="password" id="cfg-pin-seguridad" placeholder="4–12 dígitos" maxlength="12" inputmode="numeric" onchange="actualizarPinSeguridad(this)">
                     </div>
                     <hr style="border:0; border-top:1px solid #b0bec5; margin:15px 0;">
                     <label style="font-weight:bold; color:#c62828; font-size:0.9rem; display:block; margin-bottom:5px;">🚨 REINICIAR DATOS DE USUARIO:</label>
@@ -1024,7 +1024,6 @@
         initStorage('dinamico_premios', premiosBase);
         initStorage('dinamico_rangos', rangosBase);
         initStorage('mision_registro_premios', {});
-        if(!localStorage.getItem('mision_pin_seguridad')) localStorage.setItem('mision_pin_seguridad', '18681');
 
         var usuarioActual = 'Jan';
         var puntos = 0;
@@ -1164,7 +1163,7 @@
             var pct=Math.min(100,Math.round(ganado/presupuesto*100));bar.style.width=pct+'%';txt.textContent=formatearValor(ganado,u.id)+' / '+formatearValor(presupuesto,u.id)+' este mes';
         }
 
-        function actualizarInputsConfig() { var pin=document.getElementById('cfg-pin-seguridad'); if(pin)pin.value=localStorage.getItem('mision_pin_seguridad')||'18681'; renderizarUsuariosUI(); }
+        function actualizarInputsConfig() { var pin=document.getElementById('cfg-pin-seguridad'); if(pin)pin.value=''; renderizarUsuariosUI(); }
 
         function cambiarUsuario() {
             cargarDatosUsuario();
@@ -1631,11 +1630,28 @@ function iconoPapeleraSVG() {
 
         function analizarEstadoDatos(){var st=refrescarEstadoApp(),checks=[];var dup=(arr)=>arr.length!==new Set(arr.map(x=>x.id)).size;checks.push({nivel:dup(st.categorias)||dup(st.misiones)||dup(st.premios)?'error':'ok',titulo:'IDs únicos',texto:dup(st.categorias)||dup(st.misiones)||dup(st.premios)?'Se han detectado IDs duplicados.':'No se detectan IDs duplicados.'});var huer=st.misiones.filter(m=>!st.categorias.some(c=>c.id===m.idCat)&&m.idCat!=='sin-categoria');checks.push({nivel:huer.length?'warn':'ok',titulo:'Misiones sin categoría',texto:huer.length?huer.length+' misión(es) apuntan a una categoría inexistente.':'Todas las misiones tienen una categoría válida.'});var neg=st.misiones.filter(m=>m.pts<0).length+st.premios.filter(p=>p.pts<0).length;checks.push({nivel:neg?'error':'ok',titulo:'Valores negativos',texto:neg?neg+' elemento(s) tienen puntos negativos.':'No hay puntos negativos.'});var cero=st.premios.filter(p=>p.pts===0).length;checks.push({nivel:cero?'warn':'ok',titulo:'Premios de 0 puntos',texto:cero?cero+' premio(s) cuestan 0 puntos.':'No hay premios gratuitos.'});var catsVacias=st.categorias.filter(c=>!st.misiones.some(m=>m.idCat===c.id)).length;checks.push({nivel:catsVacias?'warn':'ok',titulo:'Categorías vacías',texto:catsVacias?catsVacias+' categoría(s) no contienen misiones.':'Todas las categorías contienen misiones.'});var rangos=[...st.rangos].sort((a,b)=>a.pts-b.pts),duplicadosR=rangos.some((r,i)=>i&&r.pts===rangos[i-1].pts);checks.push({nivel:duplicadosR?'warn':'ok',titulo:'Umbrales de rangos',texto:duplicadosR?'Hay rangos con el mismo mínimo de puntos.':'Los umbrales de rangos son coherentes.'});checks.push({nivel:'ok',titulo:'Versión de datos',texto:'Esquema '+(localStorage.getItem('mision_schema_version')||'?')+' / aplicación '+APP_SCHEMA_VERSION+'.'});return checks;}
         function renderizarEstadoDatos(){var box=document.getElementById('estado-datos-lista');if(!box)return;var checks=analizarEstadoDatos();box.innerHTML=checks.map(c=>'<div class="estado-dato-card '+c.nivel+'"><strong>'+escaparHTML(c.titulo)+'</strong><div style="margin-top:5px;color:#546e7a;">'+escaparHTML(c.texto)+'</div></div>').join('');}
-        function actualizarPinSeguridad(inputEl) {
+        async function actualizarPinSeguridad(inputEl) {
             var nuevoPin = inputEl.value.trim();
-            if(nuevoPin) {
-                localStorage.setItem('mision_pin_seguridad', nuevoPin);
+            if(!nuevoPin) return;
+            if(!/^\d{4,12}$/.test(nuevoPin)) {
+                await mostrarAlertaApp('El PIN debe contener entre 4 y 12 números.');
+                inputEl.value = '';
+                return;
+            }
+            try {
+                await cloudRequest('admin_set_pin', {
+                    token: cloudToken,
+                    admin_token: cloudAdminToken,
+                    new_pin: nuevoPin
+                });
+                cloudAdminToken = '';
+                inputEl.value = '';
                 triggerFlashEffect(inputEl);
+                await mostrarAlertaApp('PIN de padres actualizado correctamente.');
+                cerrarConfigYVolver();
+            } catch(e) {
+                await mostrarAlertaApp(mensajeErrorCloud(e.code));
+                if(e.code === 'invalid_admin_token') cerrarConfigYVolver();
             }
         }
 
@@ -1651,16 +1667,22 @@ function iconoPapeleraSVG() {
             document.getElementById('input-modal-pin-value').focus();
         }
 
-        function verificarPinModal() {
-            var pinGuardado = localStorage.getItem('mision_pin_seguridad') || '18681';
+        async function verificarPinModal() {
             var intento = document.getElementById('input-modal-pin-value').value.trim();
-            
-            if(intento === pinGuardado) {
+            if(!/^\d{4,12}$/.test(intento)) {
+                await mostrarAlertaApp('PIN incorrecto.');
+                document.getElementById('input-modal-pin-value').value = '';
+                return;
+            }
+            try {
+                const data = await cloudRequest('admin_verify', {token: cloudToken, pin: intento});
+                cloudAdminToken = data.admin_token || '';
+                document.getElementById('input-modal-pin-value').value = '';
                 document.getElementById('modal-pin').style.display = 'none';
                 abrirConfigPanel();
-            } else {
-                mostrarAlertaApp("❌ PIN Incorrecto. Acceso denegado.");
+            } catch(e) {
                 document.getElementById('input-modal-pin-value').value = '';
+                await mostrarAlertaApp(mensajeErrorCloud(e.code));
             }
         }
 
@@ -1692,6 +1714,7 @@ function iconoPapeleraSVG() {
         }
 
         function cerrarConfigYVolver() {
+            cloudAdminToken = '';
             document.getElementById('bloque-config').classList.add('oculto');
             document.getElementById('btn-config').classList.remove('active');
             document.getElementById('menu-principal-tabs').classList.remove('oculto');
@@ -1751,10 +1774,11 @@ function iconoPapeleraSVG() {
         const CLOUD_USER_KEY = 'cloud_custom_username';
         let cloudToken = localStorage.getItem(CLOUD_TOKEN_KEY) || '';
         let cloudUsername = localStorage.getItem(CLOUD_USER_KEY) || '';
+        let cloudAdminToken = '';
         let cloudSyncTimer = null, cloudApplying = false, cloudLastUpdated = null, cloudPollTimer = null;
 
         function esClaveSincronizable(k){
-            return !!k && (k.startsWith('dinamico_') || k.startsWith('mision_')) && k !== 'mision_backup_automatico';
+            return !!k && (k.startsWith('dinamico_') || k.startsWith('mision_')) && k !== 'mision_backup_automatico' && k !== 'mision_pin_seguridad';
         }
         function estadoLocalParaNube(){
             const out={};
@@ -1776,6 +1800,11 @@ function iconoPapeleraSVG() {
                 invalid_username:'El usuario debe tener entre 3 y 32 caracteres: letras, números, punto, guion o guion bajo.',
                 invalid_pin:'El PIN debe contener entre 4 y 12 números.',
                 invalid_credentials:'Usuario o PIN incorrectos.',
+                account_locked:'Demasiados intentos fallidos. Acceso bloqueado durante 15 minutos.',
+                invalid_admin_pin:'PIN de padres incorrecto.',
+                admin_locked:'Demasiados intentos fallidos del PIN de padres. Bloqueado durante 15 minutos.',
+                invalid_admin_token:'La autorización de padres ha caducado. Vuelve a introducir el PIN.',
+                admin_not_configured:'El PIN de padres no está configurado.',
                 username_taken:'Ese usuario ya existe.',
                 registration_closed:'El registro está deshabilitado.',
                 registration_disabled:'El registro está deshabilitado.',
@@ -1815,7 +1844,7 @@ function iconoPapeleraSVG() {
         }
         async function cerrarSesionCloud(){
             try{ if(cloudToken) await cloudRequest('logout',{token:cloudToken}); }catch(e){}
-            limpiarSesionCloud(); mostrarAuth(true); setSyncEstado('Nube: sesión cerrada','sync-warn'); if(cloudPollTimer)clearInterval(cloudPollTimer);
+            cloudAdminToken=''; limpiarSesionCloud(); mostrarAuth(true); setSyncEstado('Nube: sesión cerrada','sync-warn'); if(cloudPollTimer)clearInterval(cloudPollTimer);
         }
 
         async function subirEstadoNube(){
@@ -1875,6 +1904,7 @@ function iconoPapeleraSVG() {
         Storage.prototype.removeItem=function(k){ _removeItemOriginal.call(this,k); if(this===localStorage&&esClaveSincronizable(k))programarSyncNube(); };
 
         async function bootstrapCloud(){
+            localStorage.removeItem('mision_pin_seguridad');
             asegurarEstructuraDatos(); renderizarUsuariosUI(); cargarDatosUsuario();
             if(cloudToken){
                 if(cloudUsername){const u=document.getElementById('auth-username');if(u)u.value=cloudUsername;}
