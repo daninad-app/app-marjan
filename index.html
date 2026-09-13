@@ -577,7 +577,7 @@
         .auth-card p { margin:0 0 18px; color:#607d8b; font-size:.92rem; }
         .auth-card label { display:block; margin:10px 0 5px; font-size:.8rem; font-weight:800; color:#455a64; }
         .auth-card input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #b0bec5; border-radius:9px; font-size:1rem; }
-        .auth-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+        .auth-actions { display:grid; grid-template-columns:1fr; gap:8px; margin-top:14px; }
         .auth-actions button { border:0; border-radius:9px; padding:11px; font-weight:800; cursor:pointer; }
         .auth-primary { background:#4e94dc; color:#fff; }
         .auth-secondary { background:#eef3f6; color:#37474f; }
@@ -599,7 +599,6 @@
             <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" placeholder="4–12 dígitos" maxlength="12">
             <div class="auth-actions">
                 <button class="auth-primary" type="button" onclick="iniciarSesionCloud()">Entrar</button>
-                <button class="auth-secondary" type="button" onclick="registrarCuentaCloud()">Crear acceso</button>
             </div>
             <div id="auth-msg" class="auth-msg"></div>
         </div>
@@ -1778,7 +1777,8 @@ function iconoPapeleraSVG() {
                 invalid_pin:'El PIN debe contener entre 4 y 12 números.',
                 invalid_credentials:'Usuario o PIN incorrectos.',
                 username_taken:'Ese usuario ya existe.',
-                registration_closed:'El acceso familiar ya está creado. Usa Entrar con el mismo usuario y PIN.',
+                registration_closed:'El registro está deshabilitado.',
+                registration_disabled:'El registro está deshabilitado.',
                 invalid_session:'La sesión ha caducado. Vuelve a entrar.',
                 state_too_large:'Los datos son demasiado grandes para sincronizarlos.',
                 server_error:'Error del servidor. Inténtalo de nuevo.'
@@ -1810,15 +1810,6 @@ function iconoPapeleraSVG() {
             authMensaje('Accediendo…');
             try{
                 const data=await cloudRequest('login',{username,pin});
-                guardarSesionCloud(data); document.getElementById('auth-pin').value=''; authMensaje(''); await iniciarNubeTrasLogin();
-            }catch(e){authMensaje(mensajeErrorCloud(e.code));}
-        }
-        async function registrarCuentaCloud(){
-            const username=document.getElementById('auth-username').value.trim().toLowerCase(), pin=document.getElementById('auth-pin').value.trim();
-            if(!username||!pin){authMensaje('Introduce usuario y un PIN de 4 a 12 números.');return;}
-            authMensaje('Creando acceso familiar…');
-            try{
-                const data=await cloudRequest('register',{username,pin});
                 guardarSesionCloud(data); document.getElementById('auth-pin').value=''; authMensaje(''); await iniciarNubeTrasLogin();
             }catch(e){authMensaje(mensajeErrorCloud(e.code));}
         }
