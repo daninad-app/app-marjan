@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Misión Héroes del Día 🎮</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* VARIABLES DE DISEÑO DINÁMICAS */
+        :root {
+            --color-primario: #4A90E2;
+            --color-secundario: #357abd;
+            --color-fondo-cabecera: #4A90E2;
+            --color-texto-cabecera: #ffffff;
+            --color-accento-puntos: #FFD700;
+            --color-sombra-pestana: rgba(74, 144, 226, 0.3);
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; text-align: center; transition: background 0.3s; }
+        
+        /* CABECERA TOP */
+        .header { 
+            background: var(--color-fondo-cabecera); 
+            color: var(--color-texto-cabecera); 
+            padding: 20px 30px; 
+            border-radius: 20px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12); 
+            position: relative; 
+            transition: all 0.4s ease;
+            display: table;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header-col-left { display: table-cell; vertical-align: middle; text-align: left; }
+        .header-col-right { display: table-cell; vertical-align: middle; text-align: right; }
+        
+        .perfil-card-wrapper { display: table; text-align: left; }
+        .perfil-avatar-cell { display: table-cell; vertical-align: middle; padding-right: 18px; }
+        .perfil-info-cell { display: table-cell; vertical-align: middle; }
+
+        #current-avatar { 
+            font-size: 42px; background: rgba(255,255,255,0.22); width: 76px; height: 76px; 
+            line-height: 74px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); 
+            cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        #current-avatar:hover { transform: scale(1.05); }
+        
+        .selector-usuario {
+            background: rgba(255, 255, 255, 0.95); color: #1a252f; border: none; font-size: 1.4rem; 
+            font-weight: 800; padding: 4px 14px; border-radius: 12px; cursor: pointer; outline: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08); letter-spacing: -0.5px;
+        }
+        
+        #rango-etiqueta { 
+            font-size: 0.8rem; font-weight: 700; color: #fff; background: rgba(0,0,0,0.25); 
+            padding: 5px 12px; border-radius: 8px; margin-top: 6px; display: inline-block;
+            text-transform: uppercase; letter-spacing: 0.6px; transition: all 0.3s; 
+        }
+
+        .puntos-container-top { display: flex; flex-direction: column; align-items: flex-end; text-align: right; vertical-align: middle; margin-right: 65px; gap: 5px; }
+        .puntos-saldo-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.78); line-height: 1; }
+        .puntos-box-valor { font-size: 2.2rem; font-weight: 900; color: var(--color-accento-puntos); text-shadow: 0 2px 4px rgba(0,0,0,0.15); line-height: 1; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+        .icono-estrella-puntos { font-size: 1.6rem; line-height: 1; display: inline-flex; align-items: center; }
+        .historico-badge-top { font-size: 0.76rem; color: rgba(255,255,255,0.94); background: rgba(0, 0, 0, 0.18); padding: 5px 9px; border-radius: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; line-height: 1.1; }
+        .historico-badge-top strong { font-size: 0.9rem; color: #fff; }
+
+        .btn-config-engranaje {
+            position: absolute; top: 50%; right: 25px; transform: translateY(-50%); font-size: 1.4rem; 
+            background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 44px; height: 44px; 
+            cursor: pointer; color: var(--color-texto-cabecera); display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .btn-config-engranaje:hover { background: rgba(255,255,255,0.3); transform: translateY(-50%) rotate(45deg); }
+        .btn-config-engranaje.active { background: #FFD700; color: #2C3E50; transform: translateY(-50%) rotate(90deg); }
+
+        /* NAVEGACIÓN GENERAL */
+        .nav-tabs, .subnav-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .btn-nav { 
+            background: #fff; border: 3px solid var(--color-primario); color: var(--color-primario); 
+            padding: 10px 22px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.05rem; transition: all 0.3s;
+        }
+        .btn-nav.active { background: var(--color-primario) !important; color: white !important; box-shadow: 0 4px 8px var(--color-sombra-pestana); }
+
+        /* SUB-NAVEGACIÓN CONFIGURACIÓN RESPONSIVE */
+        .subnav-tabs { gap: 8px; margin-bottom: 20px; width: 100%; justify-content: center; }
+        .btn-subnav {
+            background: #e0e0e0; border: none; color: #37474f; padding: 8px 16px; border-radius: 20px;
+            font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .btn-subnav.active { background: #37474f; color: white; }
+
+        /* BUSCADOR */
+        .search-container { max-width: 500px; margin: 0 auto 20px auto; padding: 0 10px; }
+        .search-input { width: 100%; padding: 12px 16px; font-size: 1rem; border-radius: 25px; border: 2px solid #b0bec5; outline: none; box-sizing: border-box; transition: border-color 0.2s; }
+        .search-input:focus { border-color: var(--color-primario); }
+
+        /* REJILLAS Y BLOQUES */
+        .wrapper { width: 100%; box-sizing: border-box; text-align: left; }
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; width: 100%; }
+        .seccion { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { color: var(--color-primario); margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; font-size: 1.25rem; transition: color 0.3s; }
+        
+        .boton-accion { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; margin: 6px 0; border: 1px solid #eee; border-radius: 8px; cursor: pointer;
+            background: #fff; transition: background 0.1s;
+        }
+        .boton-accion:active { background: #eef5ff; }
+        .boton-accion.bloqueado { background: #eceff1; border-color: #b0bec5; cursor: not-allowed; opacity: 0.7; }
+        
+        .texto-mision { display: flex; flex-direction: column; gap: 2px; font-size: 0.95rem; color: #2C3E50; }
+        .contador-limite { font-size: 0.75rem; color: #78909c; font-weight: bold; }
+        
+        .pts-verde { background: #4CAF50; color: white; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; white-space: nowrap; }
+        .pts-negro { background: #333; color: white; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; white-space: nowrap; }
+
+        /* RECOMPENSAS */
+        .premios-box { background: #fff9e6; border: 2px dashed #ffe0b2; }
+        .grid-premios { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
+        .card-premio { background: white; padding: 15px; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; flex-direction: column; gap: 10px; cursor: pointer; }
+        .card-premio-meta { display: flex; justify-content: space-between; font-weight: bold; color: #2C3E50; }
+        
+        .progreso-container { background: #e0e0e0; border-radius: 8px; height: 14px; width: 100%; overflow: hidden; position: relative; }
+        .progreso-barra { height: 100%; background: linear-gradient(90deg, var(--color-primario), var(--color-secundario)); width: 0%; transition: width 0.4s; }
+        .progreso-barra.completado { background: linear-gradient(90deg, #66bb6a, #4caf50) !important; }
+        .progreso-texto { position: absolute; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; color: #333; line-height: 14px; }
+
+        /* HISTORIAL */
+        .item-historial { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px; margin: 8px 0; background: white; border-left: 5px solid #ff9800; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .item-historial.ganado { border-left-color: #4caf50; }
+        .fecha-historial { color: #78909c; font-size: 0.85rem; font-family: monospace; }
+        .grafico-contenedor { width: 100%; max-width: 500px; margin: 0 auto 25px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* CONFIGURACIÓN */
+        .config-box { background: #eceff1; border: 2px solid #b0bec5; }
+        .form-grupo { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+        .form-grupo label { font-weight: bold; color: #37474f; font-size: 0.9rem; }
+        .form-grupo input, .form-grupo select { padding: 10px; border: 1px solid #b0bec5; border-radius: 6px; font-size: 1rem; }
+        .btn-crear { background: var(--color-primario); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: background 0.3s; }
+        .btn-guardar-archivo { background: #4CAF50; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        .editor-puntos-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 8px; margin-bottom: 10px; border: 1px solid #cfd8dc; transition: background-color 0.4s ease; }
+        .editor-puntos-item input { width: 80px; padding: 6px; text-align: center; font-size: 1.1rem; font-weight: bold; border: 1px solid #b0bec5; border-radius: 4px; }
+
+        .lista-gestion { background: white; padding: 10px; border-radius: 8px; max-height: 280px; overflow-y: auto; border: 1px solid #cfd8dc; }
+        .item-gestion { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; gap: 10px; transition: background-color 0.4s ease; }
+        .btn-borrar { background: transparent; color: #e53935; border: none; padding: 2px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; line-height: 1; transition: transform 0.15s ease, color 0.2s ease, opacity 0.2s ease; }
+        .btn-borrar:hover { color: #c62828; transform: scale(1.08); }
+        .btn-borrar:active { transform: scale(0.96); }
+        .btn-borrar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .cat-gestion-titulo { font-size: 0.8rem; font-weight: bold; color: #78909c; margin: 8px 0 4px 0; text-transform: uppercase; }
+
+        /* EFECTO DESTELLO INTEGRADO (FLASH SAVED) */
+        .flash-saved { background-color: #e8f5e9 !important; transition: none !important; }
+
+        .color-picker-rango { width: 45px; height: 28px; padding: 0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
+        .input-pts-rango, .input-pts-editable { width: 65px; padding: 4px; text-align: center; font-weight: bold; border: 1px solid #b0bec5; border-radius: 4px; }
+        .input-texto-editable { flex: 1; min-width: 140px; padding: 6px 8px; font-size: 0.9rem; border: 1px solid #b0bec5; border-radius: 4px; box-sizing: border-box; }
+
+
+        .btn-secundario { background:#fff; color:#37474f; border:1px solid #b0bec5; padding:10px 12px; border-radius:6px; font-weight:700; cursor:pointer; min-height:42px; }
+        .btn-secundario:hover { border-color:var(--color-primario); color:var(--color-primario); }
+        .backup-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .select-periodo-editable { padding:6px 8px; border:1px solid #b0bec5; border-radius:4px; background:#fff; font-size:.85rem; }
+        .select-cat-editable { min-width:150px; padding:6px 8px; border:1px solid #b0bec5; border-radius:4px; background:#fff; font-size:.9rem; }
+        .gestion-mision { align-items:stretch; display:block; border:1px solid #dfe7ec; border-radius:14px; padding:12px !important; background:linear-gradient(180deg,#ffffff,#fbfdff); box-shadow:0 2px 8px rgba(38,50,56,.04); }
+        .gestion-mision-top { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; margin-bottom:10px; }
+        .gestion-mision-top .input-texto-editable { margin:0; font-size:1rem; font-weight:700; border-radius:10px; min-height:42px; }
+        .gestion-mision-top .btn-borrar { width:34px; height:34px; align-self:center; }
+        .gestion-mision-controles { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+        .gestion-premio-controles { display:grid; grid-template-columns:minmax(0,1.6fr) auto auto auto auto; gap:10px; align-items:end; }
+        .campo-bloque { display:flex; flex-direction:column; gap:5px; min-width:0; }
+        .campo-bloque > span { font-size:.73rem; font-weight:800; color:#607d8b; text-transform:uppercase; letter-spacing:.04em; }
+        .campo-bloque select, .campo-bloque input { width:100%; min-height:40px; padding:8px 10px; border:1px solid #b9c7d1; border-radius:10px; background:#fff; font-size:.95rem; }
+        .campo-bloque input[type='checkbox'] { width:18px; min-height:auto; padding:0; }
+        .campo-bloque.campo-check { justify-content:center; }
+        .campo-bloque.campo-check .switch-inline { min-height:40px; padding:0 10px; border:1px solid #b9c7d1; border-radius:10px; background:#f8fbfd; font-weight:700; color:#45606f; }
+        .campo-bloque.campo-check .switch-inline input { margin:0; }
+        .campo-bloque.campo-mini { white-space:normal; gap:5px; align-items:stretch; }
+        .campo-bloque.campo-mini input, .campo-bloque.campo-mini select { text-align:center; font-weight:700; }
+        .equivalencia-badge { display:flex; align-items:center; justify-content:center; min-height:40px; padding:0 12px; border-radius:10px; background:#eef5f9; border:1px dashed #b8cddb; color:#38556a; font-weight:800; white-space:nowrap; }
+        .equivalencia-badge strong { color:#0f3551; }
+        .gestion-premio { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; border:1px solid #dfe7ec; border-radius:14px; padding:12px !important; background:linear-gradient(180deg,#ffffff,#fbfdff); box-shadow:0 2px 8px rgba(38,50,56,.04); }
+        .gestion-premio .input-texto-editable { margin:0; font-size:1rem; font-weight:700; min-height:42px; border-radius:10px; }
+        .gestion-premio .btn-borrar { width:34px; height:34px; }
+        .campo-mini { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+        .campo-mini span { font-size:.78rem; color:#546e7a; }
+        .estado-vacio { margin:10px 0 0; padding:10px; color:#78909c; background:#f7f9fb; border-radius:8px; text-align:center; font-size:.9rem; }
+        .toast-app { position:fixed; left:50%; bottom:24px; transform:translate(-50%, 20px); background:#263238; color:#fff; padding:10px 16px; border-radius:22px; font-weight:700; font-size:.9rem; opacity:0; pointer-events:none; z-index:2000; transition:opacity .2s ease, transform .2s ease; box-shadow:0 6px 18px rgba(0,0,0,.22); max-width:calc(100vw - 30px); text-align:center; }
+        .toast-app.visible { opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+        .toast-app .btn-deshacer { margin-left:10px; border:0; background:transparent; color:#FFD54F; font-weight:900; cursor:pointer; text-decoration:underline; font-size:.9rem; }
+        .btn-orden { background:transparent; border:0; color:#607d8b; cursor:pointer; font-size:1rem; padding:3px 5px; line-height:1; }
+        .btn-orden:hover { color:var(--color-primario); }
+        .orden-controles { display:inline-flex; align-items:center; gap:1px; flex:0 0 auto; }
+        .switch-inline { display:inline-flex; align-items:center; gap:5px; font-size:.8rem; color:#546e7a; white-space:nowrap; }
+        .switch-inline input { width:17px; height:17px; accent-color:var(--color-primario); }
+        .usuario-gestion { display:grid; grid-template-columns:58px minmax(130px,1fr) auto; gap:8px; align-items:center; }
+        .usuario-avatar-input { width:58px; text-align:center; font-size:1.25rem; padding:6px; border:1px solid #b0bec5; border-radius:6px; }
+        .hist-filtros { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 16px; }
+        .hist-filtros select, .hist-filtros input { width:100%; padding:9px; border:1px solid #b0bec5; border-radius:7px; background:#fff; }
+        .resumen-semanal { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+        .resumen-card { background:#fff; border:1px solid #e1e7eb; border-radius:10px; padding:12px; text-align:center; }
+        .resumen-card strong { display:block; font-size:1.35rem; color:var(--color-primario); margin-top:3px; }
+        .resumen-usuarios { grid-column:1/-1; background:#fff; border:1px solid #e1e7eb; border-radius:10px; padding:10px 12px; }
+        .resumen-usuario-fila { display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px solid #f0f0f0; }
+        .resumen-usuario-fila:last-child { border-bottom:0; }
+        .card-premio.inactivo { opacity:.55; cursor:not-allowed; }
+        .premio-estado { font-size:.76rem; color:#78909c; font-weight:700; }
+
+
+        .modo-adolescente .premios-box { background:#f6f8fa; border-style:solid; border-color:#d7dee3; }
+        .modo-adolescente .card-premio { border-color:#d7dee3; }
+        .modo-adolescente .progreso-barra { background:linear-gradient(90deg,#607d8b,#455a64); }
+        .finanzas-adolescente { display:none; margin:0 0 16px; padding:14px; background:#fff; border:1px solid #d7dee3; border-radius:10px; }
+        .modo-adolescente .finanzas-adolescente { display:block; }
+        .finanzas-adolescente-grid { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; }
+        .finanzas-adolescente input { width:100%; padding:10px; border:1px solid #b0bec5; border-radius:7px; font-size:1rem; }
+        .input-modo-usuario { padding:7px 8px; border:1px solid #b0bec5; border-radius:6px; background:#fff; }
+        .presupuesto-input { width:100px; padding:7px 8px; border:1px solid #b0bec5; border-radius:6px; }
+        .unidad-mini { font-size:.72rem; color:#607d8b; font-weight:700; }
+
+        .oculto { display: none !important; }
+
+        /* MODALES */
+        #selector, #modal-pin { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .selector-blanco, .modal-pin-blanco { background: white; padding: 25px; border-radius: 15px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .grid-avatar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
+        .opcion { font-size: 45px; cursor: pointer; padding: 8px; border-radius: 10px; }
+        .opcion:hover { background: #f0f0f0; }
+
+        .btn-reset { background: #FF5252; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; width: 100%; margin-top: 5px; }
+
+
+        /* RESPONSIVE / MÓVIL */
+        html { -webkit-text-size-adjust: 100%; }
+        body { box-sizing: border-box; min-width: 0; }
+        *, *::before, *::after { box-sizing: border-box; }
+        img, canvas { max-width: 100%; }
+        button, input, select { max-width: 100%; }
+        .grid-layout { grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); }
+        .item-gestion > * { min-width: 0; }
+        .input-texto-editable { min-width: 140px; width: 100%; flex: 1 1 220px; padding: 7px 8px; border: 1px solid #b0bec5; border-radius: 4px; font-size: 0.95rem; }
+
+        @media (max-width: 700px) {
+            body { padding: 10px; }
+            .header { display:flex; flex-direction:row; align-items:center; gap:8px; padding:12px 54px 12px 12px; border-radius:14px; min-height:78px; }
+            .header-col-left { display:block; flex:1 1 auto; min-width:0; text-align:left; }
+            .header-col-right { display:block; flex:0 0 auto; width:auto; text-align:right; padding:0; }
+            .perfil-card-wrapper { width:100%; display:flex; align-items:center; min-width:0; }
+            .perfil-avatar-cell { display:block; padding-right:8px; flex:0 0 auto; }
+            .perfil-info-cell { display:block; min-width:0; }
+            #current-avatar { width:50px; height:50px; line-height:48px; font-size:29px; }
+            .selector-usuario { font-size:1rem; max-width:105px; padding:4px 8px; }
+            #rango-etiqueta { max-width:125px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            .puntos-container-top { margin-right:0; text-align:right; align-items:flex-end; gap:4px; }
+            .puntos-saldo-label { font-size:.61rem; }
+            .puntos-box-valor { font-size:1.7rem; }
+            .icono-estrella-puntos { font-size:1.35rem; }
+            .historico-badge-top { padding:4px 7px; white-space:nowrap; font-size:.67rem; }
+            .historico-badge-top strong { font-size:.78rem; }
+            .btn-config-engranaje { top:50%; right:10px; bottom:auto; transform:translateY(-50%); width:38px; height:38px; }
+            .btn-config-engranaje:hover, .btn-config-engranaje.active { transform:translateY(-50%); }
+
+            .nav-tabs { justify-content:center; flex-wrap:nowrap; overflow:visible; gap:8px; }
+            .subnav-tabs { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:7px; overflow:visible; padding-bottom:0; }
+            .btn-nav { flex:0 0 auto; white-space:nowrap; padding:9px 15px; font-size:.95rem; }
+            .btn-subnav { width:100%; white-space:normal; padding:8px 6px; font-size:.79rem; line-height:1.15; }
+
+            .search-container { padding: 0; margin-bottom: 14px; }
+            .search-input { padding: 11px 14px; }
+            .grid-layout { grid-template-columns: 1fr; gap: 12px; }
+            .seccion { padding: 14px; margin-bottom: 12px; border-radius: 10px; }
+            h2 { font-size: 1.1rem; }
+            .boton-accion { gap: 10px; padding: 11px; }
+            .texto-mision { min-width: 0; overflow-wrap: anywhere; }
+            .pts-verde, .pts-negro { flex: 0 0 auto; }
+            .grid-premios { grid-template-columns: 1fr; }
+
+            .lista-gestion { max-height: none; padding: 6px; }
+            .item-gestion { flex-wrap:wrap; align-items:center; gap:7px; padding:10px 6px; }
+            .item-gestion .input-texto-editable { flex:1 1 calc(100% - 40px); order:1; }
+            .item-gestion > strong { order:0; flex:0 0 100%; }
+            .item-gestion > div { flex:0 1 auto; }
+            .item-gestion .btn-borrar { margin-left:auto; flex:0 0 32px; width:32px; height:32px; }
+            .gestion-mision { display:block; }
+            .gestion-mision-top { grid-template-columns:28px minmax(0,1fr) 32px; gap:8px; }
+            .gestion-mision-controles { width:100%; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+            .gestion-premio { grid-template-columns:28px minmax(0,1fr) 32px; align-items:start; }
+            .gestion-premio-controles { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+            .campo-bloque.campo-check .switch-inline, .equivalencia-badge { min-height:38px; }
+        .select-cat-editable { width:100%; min-width:0; }
+            .backup-actions { grid-template-columns:1fr; }
+            .hist-filtros { grid-template-columns:1fr; }
+            .resumen-semanal { grid-template-columns:1fr 1fr; }
+            .usuario-gestion { grid-template-columns:52px minmax(0,1fr) auto; }
+            .input-pts-editable, .input-pts-rango { width: 58px; }
+            .editor-puntos-item { flex-direction: column; align-items: stretch; gap: 8px; }
+            .editor-puntos-item > div { display: grid !important; grid-template-columns: 1fr 1fr; }
+            .editor-puntos-item input { width: 100%; }
+            .form-grupo input, .form-grupo select, .btn-crear, .btn-reset, .btn-guardar-archivo { min-height: 44px; }
+            .grafico-contenedor { padding: 10px; }
+        }
+
+        @media (max-width: 390px) {
+            body { padding: 7px; }
+            .header { padding: 13px; }
+            .selector-usuario { font-size: 1rem; }
+            #rango-etiqueta { font-size: 0.72rem; }
+            .historico-badge-top { font-size:0.68rem; }
+            .subnav-tabs { grid-template-columns:repeat(2, minmax(0,1fr)); }
+            .gestion-mision-controles, .gestion-premio-controles { grid-template-columns:1fr; }
+        .select-cat-editable { grid-column:1 / -1; }
+            .seccion { padding:12px; }
+        }
+
+
+        /* MEJORAS VISUALES / UX */
+        .selector-blanco.avatar-selector { max-width:560px; width:min(560px, calc(100vw - 32px)); overflow-x:hidden; box-sizing:border-box; }
+        .grid-avatar { grid-template-columns:repeat(6,minmax(0,1fr)); max-height:330px; overflow-y:auto; overflow-x:hidden; padding:4px; box-sizing:border-box; width:100%; }
+        .opcion { border:2px solid transparent; transition:transform .15s ease, background .15s ease, border-color .15s ease; }
+        .opcion:hover { transform:scale(1.08); border-color:var(--color-primario); }
+        .rango-progreso-wrap { margin-top:7px; width:min(250px,100%); }
+        .rango-progreso-track { height:6px; background:rgba(255,255,255,.3); border-radius:10px; overflow:hidden; }
+        .rango-progreso-bar { height:100%; width:0; background:#FFD54F; border-radius:10px; transition:width .35s ease; }
+        .rango-progreso-texto { font-size:.68rem; color:rgba(255,255,255,.9); margin-top:3px; white-space:nowrap; }
+        .toolbar-misiones { display:flex; justify-content:center; gap:8px; margin:-8px auto 18px; }
+        .btn-vista { border:1px solid #cfd8dc; background:#fff; color:#455a64; border-radius:18px; padding:6px 11px; font-weight:700; cursor:pointer; font-size:.82rem; }
+        .categoria-titulo { display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; user-select:none; }
+        .categoria-toggle { background:transparent; border:0; color:inherit; cursor:pointer; font-size:.95rem; padding:3px 5px; }
+        .seccion.categoria-colapsada .lista-items { display:none; }
+        body.vista-compacta .seccion { padding:12px; margin-bottom:10px; }
+        body.vista-compacta .boton-accion { padding:8px 10px; margin:4px 0; }
+        body.vista-compacta .texto-mision { font-size:.88rem; }
+        body.vista-compacta .contador-limite { font-size:.68rem; }
+        .premio-faltan { font-size:.76rem; font-weight:700; color:#ef6c00; }
+        .gestion-mision.inactivo-config { opacity:.58; background:#f5f7f8; }
+        .drag-handle { cursor:grab; user-select:none; color:#90a4ae; font-size:1.15rem; padding:4px 6px; flex:0 0 auto; }
+        .drag-handle:active { cursor:grabbing; }
+        .item-gestion.dragging { opacity:.42; outline:2px dashed var(--color-primario); }
+        .item-gestion.drag-over { box-shadow:inset 0 2px 0 var(--color-primario); }
+        .config-card-mobile { position:relative; }
+        .hist-actions { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 16px; }
+        .resumen-mensual { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+        .stats-categorias { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin-bottom:18px; }
+        .stat-cat-card { background:#fff; border:1px solid #e1e7eb; border-radius:10px; padding:10px; }
+        .stat-cat-card strong { display:block; color:var(--color-primario); margin-top:4px; }
+        .estado-datos-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+        .estado-dato-card { background:#fff; border:1px solid #dfe5e8; border-radius:10px; padding:12px; }
+        .estado-dato-card.ok { border-left:5px solid #4caf50; }
+        .estado-dato-card.warn { border-left:5px solid #ff9800; }
+        .estado-dato-card.error { border-left:5px solid #e53935; }
+        .modal-app-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.58); z-index:3000; align-items:center; justify-content:center; padding:18px; }
+        .modal-app-overlay.visible { display:flex; }
+        .modal-app-box { width:min(420px,100%); background:#fff; border-radius:16px; padding:20px; box-shadow:0 18px 50px rgba(0,0,0,.28); text-align:left; }
+        .modal-app-box h3 { margin:0 0 10px; color:#263238; }
+        .modal-app-box p { color:#546e7a; line-height:1.45; white-space:pre-line; }
+        .modal-app-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+        .modal-app-actions button { min-width:90px; padding:9px 14px; border-radius:7px; border:0; font-weight:800; cursor:pointer; }
+        .modal-app-cancelar { background:#eceff1; color:#37474f; }
+        .modal-app-ok { background:var(--color-primario); color:#fff; }
+        .avatar-mini-picker { display:grid; grid-template-columns:repeat(8,1fr); gap:5px; margin-top:6px; }
+        .avatar-mini-picker button { border:1px solid #dfe5e8; background:#fff; border-radius:8px; padding:5px; font-size:1.15rem; cursor:pointer; }
+        .avatar-mini-picker button:hover { border-color:var(--color-primario); }
+
+        @media (max-width:700px) {
+            .grid-avatar { grid-template-columns:repeat(5,minmax(0,1fr)); }
+            .resumen-mensual { grid-template-columns:1fr 1fr; }
+            .gestion-mision, .item-gestion { border:1px solid #e3e8eb; border-radius:9px; background:#fff; margin-bottom:7px; padding:9px !important; }
+            .drag-handle { grid-column:2; grid-row:1; align-self:center; justify-self:end; margin-right:34px; }
+            .hist-filtros { grid-template-columns:1fr; }
+            .toolbar-misiones { justify-content:flex-end; margin-top:-4px; }
+            .rango-progreso-wrap { max-width:125px; }
+            .rango-progreso-texto { overflow:hidden; text-overflow:ellipsis; }
+        }
+
+
+        /* REFINAMIENTO VISUAL 2026 */
+        :root {
+            --surface:#ffffff;
+            --surface-soft:#f8fafc;
+            --border-soft:#e4eaf0;
+            --text-main:#24323f;
+            --text-muted:#718096;
+            --shadow-soft:0 8px 24px rgba(31,51,73,.07);
+            --radius-lg:18px;
+            --radius-md:12px;
+        }
+        body { background:linear-gradient(180deg,#f5f8fb 0%,#eef3f7 100%); color:var(--text-main); }
+        .header { border-radius:24px; box-shadow:0 14px 34px rgba(39,88,139,.18); padding:18px 26px; }
+        .perfil-card-wrapper { width:auto; display:inline-flex; align-items:center; gap:14px; }
+        .perfil-avatar-cell { padding-right:0; }
+        #current-avatar { box-shadow:0 6px 16px rgba(0,0,0,.13); background:rgba(255,255,255,.18); }
+        .selector-usuario { box-shadow:none; padding:5px 12px; }
+        #rango-etiqueta { background:rgba(0,0,0,.16); border:1px solid rgba(255,255,255,.16); }
+        .puntos-container-top { background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:10px 13px; min-width:0; width:max-content; max-width:100%; margin-left:auto; box-sizing:border-box; }
+        .historico-badge-top { background:transparent; padding:0; color:rgba(255,255,255,.82); }
+        .btn-config-engranaje { border:1px solid rgba(255,255,255,.18); }
+
+        .nav-tabs { width:max-content; max-width:100%; margin:0 auto 20px; padding:4px; gap:4px; background:#e7edf3; border-radius:999px; box-shadow:inset 0 1px 2px rgba(0,0,0,.04); }
+        .btn-nav { border:0; border-radius:999px; padding:9px 18px; background:transparent; color:#546575; font-size:.96rem; }
+        .btn-nav.active { box-shadow:0 3px 10px rgba(37,78,120,.16) !important; }
+        .subnav-tabs { background:#f3f6f8; border:1px solid var(--border-soft); border-radius:16px; padding:7px; gap:6px; }
+        .btn-subnav { background:transparent; border-radius:10px; color:#617181; }
+        .btn-subnav.active { background:#fff; color:#263746; box-shadow:0 2px 8px rgba(31,51,73,.08); }
+
+        .mission-controls { max-width:760px; margin:0 auto 18px; display:grid; grid-template-columns:minmax(0,1fr); gap:10px; align-items:center; }
+        .mission-controls .search-container { max-width:none; margin:0; padding:0; }
+        .mission-controls .toolbar-misiones { margin:0; }
+        .search-input { border:1px solid #d8e0e7; background:rgba(255,255,255,.9); box-shadow:0 3px 12px rgba(31,51,73,.04); }
+        .search-input:focus { box-shadow:0 0 0 3px rgba(74,144,226,.12); }
+        .btn-vista { min-height:42px; padding:7px 13px; background:#fff; box-shadow:0 3px 12px rgba(31,51,73,.04); }
+
+        .grid-layout { gap:16px; }
+        .seccion { border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-soft); padding:18px; }
+        h2 { border-bottom:1px solid #edf1f4; font-size:1.1rem; letter-spacing:.01em; }
+        #bloque-misiones { display:flex; gap:16px; align-items:flex-start; }
+        #bloque-misiones .mission-column { display:flex; flex-direction:column; gap:16px; flex:1 1 0; min-width:0; }
+        #bloque-misiones .seccion { position:relative; overflow:hidden; align-self:stretch; margin-bottom:0; width:100%; box-sizing:border-box; }
+        #bloque-misiones .seccion::before { content:""; position:absolute; inset:0 auto 0 0; width:5px; background:#90a4ae; }
+        #sec-esfuerzo::before { background:#5b8def !important; }
+        #sec-hogar::before { background:#f0a44b !important; }
+        #sec-ayuda::before { background:#43a68c !important; }
+        #sec-empatia::before { background:#db6f8e !important; }
+        #sec-actitud::before { background:#8f73cf !important; }
+        #sec-esfuerzo .categoria-titulo { color:#4674c4; }
+        #sec-hogar .categoria-titulo { color:#bb7422; }
+        #sec-ayuda .categoria-titulo { color:#2f806d; }
+        #sec-empatia .categoria-titulo { color:#b84e70; }
+        #sec-actitud .categoria-titulo { color:#7056ae; }
+        .categoria-titulo { margin:-2px 0 12px; padding:0 0 10px; border-bottom:1px solid #eef2f5; }
+        .categoria-toggle { width:30px; height:30px; border-radius:50%; background:#f4f7f9; }
+
+        .boton-accion { position:relative; border:1px solid #e6ebef; border-radius:12px; padding:13px 14px; margin:8px 0; box-shadow:0 2px 7px rgba(31,51,73,.025); transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease; }
+        .boton-accion:hover { transform:translateY(-1px); box-shadow:0 7px 18px rgba(31,51,73,.07); border-color:#d1dde7; }
+        .boton-accion:active { transform:translateY(0) scale(.995); }
+        .texto-mision > span:first-child { font-weight:650; color:#2d3c49; line-height:1.35; }
+        .contador-limite { color:#8a98a5; font-weight:600; }
+        .pts-verde, .pts-negro { border-radius:999px; padding:6px 10px; font-size:.82rem; box-shadow:none; }
+        .pts-verde { background:#e8f5ed; color:#247447; border:1px solid #cfe9d9; }
+        .boton-accion.bloqueado { opacity:1; background:#f7f9fa; border-color:#e5eaee; cursor:default; }
+        .boton-accion.bloqueado .texto-mision > span:first-child { color:#7c8994; text-decoration:none; }
+        .boton-accion.bloqueado .pts-negro { background:#edf4ef; color:#3c7a51; border:1px solid #d7e8dc; }
+        .mision-pulsada { animation:misionPulse .38s ease; }
+        @keyframes misionPulse { 0%{transform:scale(1)} 45%{transform:scale(.985);background:#eef7ff} 100%{transform:scale(1)} }
+        .ganancia-flotante { position:absolute; z-index:3500; pointer-events:none; font-weight:900; font-size:.95rem; color:#247447; background:#fff; border:1px solid #cfe9d9; border-radius:999px; padding:5px 9px; box-shadow:0 6px 18px rgba(0,0,0,.12); animation:floatGain .8s ease forwards; }
+        @keyframes floatGain { 0%{opacity:0;transform:translateY(4px) scale(.92)} 20%{opacity:1} 100%{opacity:0;transform:translateY(-28px) scale(1.03)} }
+
+        .premios-box { background:linear-gradient(180deg,#fffdf7,#fffaf0); border:1px solid #f1e1bd; }
+        .card-premio { border:1px solid #eadfca; border-radius:15px; padding:17px; gap:9px; box-shadow:0 6px 18px rgba(69,54,29,.055); transition:transform .15s ease, box-shadow .15s ease; }
+        .card-premio:hover:not(.inactivo) { transform:translateY(-2px); box-shadow:0 10px 24px rgba(69,54,29,.09); }
+        .card-premio-meta { align-items:flex-start; gap:12px; }
+        .card-premio-meta > span:first-child { font-size:1rem; line-height:1.3; }
+        .card-premio-meta > span:last-child { font-size:1.18rem; white-space:nowrap; }
+        .premio-estado { color:#7d8994; }
+        .premio-faltan { font-size:.8rem; }
+        .progreso-container { height:10px; background:#edf0f2; }
+        .progreso-texto { line-height:10px; font-size:.64rem; }
+        .modo-adolescente .header { background:linear-gradient(135deg,#334d5c,#486b78); }
+        .modo-adolescente .puntos-box-valor { color:#d8f0df; }
+        .modo-adolescente .premios-box { background:linear-gradient(180deg,#f9fbfc,#f4f7f8); }
+
+        .config-box { background:#fff; border:1px solid var(--border-soft); box-shadow:var(--shadow-soft); }
+        .config-box h2 { color:#34495a; }
+        .form-grupo { gap:6px; }
+        .form-grupo label { font-size:.84rem; color:#536473; }
+        .form-grupo input, .form-grupo select { border:1px solid #d7e0e7; border-radius:9px; background:#fbfcfd; }
+        .form-grupo input:focus, .form-grupo select:focus { outline:none; border-color:var(--color-primario); box-shadow:0 0 0 3px rgba(74,144,226,.10); background:#fff; }
+        .btn-crear, .btn-secundario, .btn-reset { border-radius:10px !important; }
+        .item-gestion { border-bottom:1px solid #edf1f4; padding-top:10px; padding-bottom:10px; }
+        .btn-borrar { opacity:.68; }
+        .btn-borrar:hover { opacity:1; }
+        .drag-handle { color:#b0bbc4; }
+
+        .selector-blanco.avatar-selector { border-radius:20px; box-shadow:0 24px 60px rgba(0,0,0,.22); }
+        .grid-avatar { gap:8px; padding:6px 4px 6px 0; }
+        .grid-avatar .opcion { display:flex; align-items:center; justify-content:center; min-height:54px; font-size:1.75rem; background:#f7f9fb; border:2px solid transparent; border-radius:13px; cursor:pointer; }
+        .grid-avatar .opcion:hover { background:#eef5fb; transform:translateY(-1px); }
+        .grid-avatar .opcion.seleccionado { border-color:var(--color-primario); background:#eef5ff; box-shadow:0 0 0 3px rgba(74,144,226,.11); }
+
+        .item-historial { border-radius:10px; box-shadow:none; border-top:1px solid #edf1f4; border-right:1px solid #edf1f4; border-bottom:1px solid #edf1f4; }
+        .grafico-contenedor { border:1px solid var(--border-soft); box-shadow:var(--shadow-soft); }
+        .toast-app { border-radius:12px !important; }
+
+        @media (max-width:700px) {
+            body { background:#f3f6f9; }
+            .header { border-radius:18px; padding:12px 52px 12px 12px; }
+            .puntos-container-top { padding:7px 8px; min-width:112px; }
+            .nav-tabs { width:100%; box-sizing:border-box; }
+            .btn-nav { flex:1 1 50%; padding:9px 8px; }
+            .mission-controls { grid-template-columns:1fr; gap:7px; margin-bottom:13px; }
+            .seccion { border-radius:14px; }
+            #bloque-misiones { display:block; }
+            #bloque-misiones > .seccion { margin-bottom:12px; }
+            .boton-accion { padding:12px; }
+            .card-premio { padding:14px; }
+            .subnav-tabs { border-radius:13px; }
+            .grid-avatar .opcion { min-height:50px; font-size:1.6rem; }
+        }
+        @media (max-width:430px) {
+            .mission-controls { grid-template-columns:1fr; }
+            .historico-badge-top { font-size:.63rem; }
+        }
+
+        /* MÓVIL: CABECERA REORDENADA + VISTA SIEMPRE COMPACTA */
+        @media (max-width:700px) {
+            .header {
+                display:grid;
+                grid-template-columns:minmax(0,1fr) auto;
+                align-items:center;
+                column-gap:12px;
+                row-gap:8px;
+                padding:12px 54px 12px 12px;
+                min-height:0;
+            }
+            .header-col-left { min-width:0; }
+            .perfil-card-wrapper { width:auto; max-width:100%; display:flex; gap:10px; align-items:center; }
+            .perfil-avatar-cell { padding:0; }
+            .perfil-info-cell { min-width:0; flex:1 1 auto; }
+            .selector-usuario { max-width:150px; width:auto; }
+            #rango-etiqueta { max-width:150px; }
+            .rango-progreso-wrap { width:min(190px,100%); }
+            .header-col-right { min-width:0; }
+            .puntos-container-top { width:max-content; min-width:0; max-width:125px; padding:7px 9px; }
+        }
+
+        @media (max-width:430px) {
+            .header {
+                grid-template-columns:1fr;
+                padding:12px 50px 12px 12px;
+                row-gap:10px;
+            }
+            .header-col-left,
+            .header-col-right { width:100%; }
+            .perfil-card-wrapper { width:100%; gap:10px; }
+            #current-avatar { width:50px; height:50px; line-height:48px; font-size:29px; }
+            .selector-usuario { max-width:150px; }
+            #rango-etiqueta { max-width:170px; }
+            .rango-progreso-wrap { width:min(220px,100%); }
+            .puntos-container-top {
+                width:100%;
+                max-width:none;
+                display:grid;
+                grid-template-columns:1fr auto;
+                grid-template-areas:
+                    "label value"
+                    "history history";
+                align-items:center;
+                gap:2px 10px;
+                padding:8px 10px;
+                background:rgba(255,255,255,.10);
+                border:1px solid rgba(255,255,255,.16);
+                border-radius:12px;
+                box-sizing:border-box;
+            }
+            .puntos-saldo-label { grid-area:label; text-align:left; }
+            .puntos-box-valor { grid-area:value; justify-content:flex-end; font-size:1.55rem; }
+            .historico-badge-top { grid-area:history; justify-content:flex-end; }
+            .btn-config-engranaje { top:12px; right:10px; transform:none; }
+            .btn-config-engranaje:hover, .btn-config-engranaje.active { transform:none; }
+        }
+
+    
+        /* SINCRONIZACIÓN SUPABASE */
+        .sync-badge { position:fixed; right:16px; bottom:16px; z-index:1500; padding:7px 11px; border-radius:999px; background:#263238; color:#fff; font-size:.78rem; font-weight:800; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+        .sync-badge.sync-ok { background:#2e7d32; }
+        .sync-badge.sync-warn { background:#ef6c00; }
+        .sync-badge.sync-error { background:#c62828; }
+        .auth-gate { position:fixed; inset:0; z-index:5000; display:flex; align-items:center; justify-content:center; padding:20px; background:linear-gradient(135deg,#31586a,#4e94dc); }
+        .auth-card { width:min(420px,100%); background:#fff; border-radius:18px; padding:24px; box-shadow:0 18px 50px rgba(0,0,0,.28); }
+        .auth-card h1 { margin:0 0 6px; font-size:1.45rem; color:#263238; }
+        .auth-card p { margin:0 0 18px; color:#607d8b; font-size:.92rem; }
+        .auth-card label { display:block; margin:10px 0 5px; font-size:.8rem; font-weight:800; color:#455a64; }
+        .auth-card input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #b0bec5; border-radius:9px; font-size:1rem; }
+        .auth-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+        .auth-actions button { border:0; border-radius:9px; padding:11px; font-weight:800; cursor:pointer; }
+        .auth-primary { background:#4e94dc; color:#fff; }
+        .auth-secondary { background:#eef3f6; color:#37474f; }
+        .auth-msg { min-height:20px; margin-top:10px; font-size:.82rem; color:#546e7a; }
+        .auth-session-bar { position:fixed; right:16px; top:12px; z-index:1450; display:none; gap:6px; align-items:center; }
+        .auth-session-bar button { border:1px solid rgba(255,255,255,.5); background:rgba(255,255,255,.16); color:#fff; border-radius:8px; padding:5px 8px; font-size:.72rem; font-weight:800; cursor:pointer; }
+        @media (max-width:600px){ .sync-badge{right:10px;bottom:10px;font-size:.7rem;} .auth-session-bar{right:8px;top:8px;} }
+
+    </style>
+</head>
+<body class="vista-compacta">
+    <div id="auth-gate" class="auth-gate">
+        <div class="auth-card">
+            <h1>Acceso familiar</h1>
+            <p>Inicia sesión para mantener los datos sincronizados en todos tus dispositivos.</p>
+            <label for="auth-username">Usuario familiar</label>
+            <input id="auth-username" type="text" autocomplete="username" placeholder="Ej. marjan" maxlength="32">
+            <label for="auth-pin">PIN</label>
+            <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" placeholder="4–12 dígitos" maxlength="12">
+            <div class="auth-actions">
+                <button class="auth-primary" type="button" onclick="iniciarSesionCloud()">Entrar</button>
+                <button class="auth-secondary" type="button" onclick="registrarCuentaCloud()">Crear acceso</button>
+            </div>
+            <div id="auth-msg" class="auth-msg"></div>
+        </div>
+    </div>
+    <div id="auth-session-bar" class="auth-session-bar"><button type="button" onclick="cerrarSesionCloud()">Cerrar sesión</button></div>
+    <div id="sync-badge" class="sync-badge sync-warn">Nube: conectando…</div>
+
+
+    
+    <div id="modal-app" class="modal-app-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-app-title">
+        <div class="modal-app-box">
+            <h3 id="modal-app-title">Confirmación</h3>
+            <p id="modal-app-message"></p>
+            <div class="modal-app-actions">
+                <button id="modal-app-cancelar" class="modal-app-cancelar">Cancelar</button>
+                <button id="modal-app-ok" class="modal-app-ok">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pin">
+        <div class="modal-pin-blanco">
+            <h3 style="margin-top:0; font-size: 1.3rem; color: #37474f;">🔒 Control de Padres</h3>
+            <p style="font-size: 0.9rem; color: #546e7a; margin-bottom: 15px;">Introduce el código PIN secreto:</p>
+            <input type="password" id="input-modal-pin-value" placeholder="•••••" style="width: 80%; padding: 12px; font-size: 1.4rem; text-align: center; border-radius: 8px; border: 2px solid #b0bec5; margin-bottom: 20px; outline: none;">
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="cancelarAccesoPin()" style="padding: 10px 20px; background: #cfd8dc; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Cancelar</button>
+                <button onclick="verificarPinModal()" style="padding: 10px 20px; background: #4A90E2; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="selector" onclick="cerrarSelector()">
+        <div class="selector-blanco avatar-selector" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0; font-size: 1.4rem;">Elige tu avatar</h3>
+            <div class="grid-avatar">
+                <span class="opcion" onclick="cambiarAvatar('🥷')">🥷</span>
+                <span class="opcion" onclick="cambiarAvatar('🦸‍♂️')">🦸‍♂️</span>
+                <span class="opcion" onclick="cambiarAvatar('🦸‍♀️')">🦸‍♀️</span>
+                <span class="opcion" onclick="cambiarAvatar('🤖')">🤖</span>
+                <span class="opcion" onclick="cambiarAvatar('🦁')">🦁</span>
+                <span class="opcion" onclick="cambiarAvatar('🦄')">🦄</span>
+                <span class="opcion" onclick="cambiarAvatar('🐉')">🐉</span>
+                <span class="opcion" onclick="cambiarAvatar('🧑‍🚀')">🧑‍🚀</span>
+                <span class="opcion" onclick="cambiarAvatar('👤')">👤</span>
+                <span class="opcion" onclick="cambiarAvatar('🐯')">🐯</span>
+                <span class="opcion" onclick="cambiarAvatar('🐼')">🐼</span>
+                <span class="opcion" onclick="cambiarAvatar('🐨')">🐨</span>
+                <span class="opcion" onclick="cambiarAvatar('🦊')">🦊</span>
+                <span class="opcion" onclick="cambiarAvatar('🐺')">🐺</span>
+                <span class="opcion" onclick="cambiarAvatar('🦅')">🦅</span>
+                <span class="opcion" onclick="cambiarAvatar('🦉')">🦉</span>
+                <span class="opcion" onclick="cambiarAvatar('🐙')">🐙</span>
+                <span class="opcion" onclick="cambiarAvatar('🦈')">🦈</span>
+                <span class="opcion" onclick="cambiarAvatar('🐬')">🐬</span>
+                <span class="opcion" onclick="cambiarAvatar('🦖')">🦖</span>
+                <span class="opcion" onclick="cambiarAvatar('🦕')">🦕</span>
+                <span class="opcion" onclick="cambiarAvatar('🐲')">🐲</span>
+                <span class="opcion" onclick="cambiarAvatar('🧙‍♂️')">🧙‍♂️</span>
+                <span class="opcion" onclick="cambiarAvatar('🧙‍♀️')">🧙‍♀️</span>
+                <span class="opcion" onclick="cambiarAvatar('🧛')">🧛</span>
+                <span class="opcion" onclick="cambiarAvatar('🧚')">🧚</span>
+                <span class="opcion" onclick="cambiarAvatar('🧜‍♂️')">🧜‍♂️</span>
+                <span class="opcion" onclick="cambiarAvatar('🧜‍♀️')">🧜‍♀️</span>
+                <span class="opcion" onclick="cambiarAvatar('👨‍🚀')">👨‍🚀</span>
+                <span class="opcion" onclick="cambiarAvatar('👩‍🚀')">👩‍🚀</span>
+                <span class="opcion" onclick="cambiarAvatar('👨‍🔬')">👨‍🔬</span>
+                <span class="opcion" onclick="cambiarAvatar('👩‍🔬')">👩‍🔬</span>
+                <span class="opcion" onclick="cambiarAvatar('👨‍🎨')">👨‍🎨</span>
+                <span class="opcion" onclick="cambiarAvatar('👩‍🎨')">👩‍🎨</span>
+                <span class="opcion" onclick="cambiarAvatar('👨‍🚒')">👨‍🚒</span>
+                <span class="opcion" onclick="cambiarAvatar('👩‍🚒')">👩‍🚒</span>
+                <span class="opcion" onclick="cambiarAvatar('⚽')">⚽</span>
+                <span class="opcion" onclick="cambiarAvatar('🏀')">🏀</span>
+                <span class="opcion" onclick="cambiarAvatar('🎮')">🎮</span>
+                <span class="opcion" onclick="cambiarAvatar('🎸')">🎸</span>
+                <span class="opcion" onclick="cambiarAvatar('🚀')">🚀</span>
+                <span class="opcion" onclick="cambiarAvatar('⚡')">⚡</span>
+                <span class="opcion" onclick="cambiarAvatar('🔥')">🔥</span>
+                <span class="opcion" onclick="cambiarAvatar('🌈')">🌈</span>
+                <span class="opcion" onclick="cambiarAvatar('⭐')">⭐</span>
+                <span class="opcion" onclick="cambiarAvatar('🌟')">🌟</span>
+                <span class="opcion" onclick="cambiarAvatar('💎')">💎</span>
+                <span class="opcion" onclick="cambiarAvatar('🏆')">🏆</span>
+            </div>
+            <button onclick="cerrarSelector()" style="margin-top:20px; padding: 8px 20px; font-weight: bold;">Cerrar</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="header-col-left">
+            <div class="perfil-card-wrapper">
+                <div class="perfil-avatar-cell">
+                    <div id="current-avatar" onclick="abrirSelector()">👤</div>
+                </div>
+                <div class="perfil-info-cell">
+                    <select id="user-select" class="selector-usuario" onchange="cambiarUsuario()">
+                        <option value="Jan">Jan 👦</option>
+                        <option value="Martin">Martín 👦</option>
+                    </select>
+                    <br>
+                    <div id="rango-etiqueta">Rango: Cargando...</div>
+                    <div class="rango-progreso-wrap"><div class="rango-progreso-track"><div id="rango-progreso-bar" class="rango-progreso-bar"></div></div><div id="rango-progreso-texto" class="rango-progreso-texto"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-col-right">
+            <div class="puntos-container-top">
+                <div class="puntos-saldo-label" id="saldo-label">Saldo disponible</div>
+                <div class="puntos-box-valor"><span id="marcador">0</span><span id="unidad-principal" class="icono-estrella-puntos">⭐</span></div>
+                <div class="historico-badge-top"><strong><span id="marcador-historico">0</span> <span id="unidad-historica">⭐</span></strong><span id="historico-texto">ganados en total</span></div>
+            </div>
+        </div>
+
+        <button id="btn-config" class="btn-config-engranaje" onclick="comprobarPinYAbirConfig()">⚙️</button>
+    </div>
+
+    <div class="nav-tabs" id="menu-principal-tabs">
+        <button id="tab-misiones" class="btn-nav active" onclick="verPantalla('misiones')">⚔️ Misiones</button>
+        <button id="tab-premios" class="btn-nav" onclick="verPantalla('premios')">🎁 <span id="tab-premios-texto">Premios</span></button>
+    </div>
+
+    <div class="mission-controls">
+        <div class="search-container" id="bloque-buscador">
+            <input type="text" id="buscador-misiones" class="search-input" placeholder="🔍 Buscar misión o categoría..." oninput="filtrarMisionesPrincipales()">
+        </div>
+
+    </div>
+
+    <div id="toast-app" class="toast-app" role="status" aria-live="polite"></div>
+
+    <div class="wrapper">
+
+        <div id="bloque-misiones" class="grid-layout"></div>
+
+        <div id="bloque-premios" class="seccion premios-box oculto">
+            <h2 id="titulo-premios" style="color: #e65100; border-bottom-color: #ffe0b2; font-size: 1.6rem; text-align: center; margin-bottom: 20px;">🎁 TIENDA DE RECOMPENSAS</h2>
+            <div class="finanzas-adolescente" id="finanzas-adolescente"><strong>💶 Registrar paga entregada / retirada</strong><div class="finanzas-adolescente-grid"><div><small>Importe a retirar del saldo disponible</small><input type="number" id="importe-pago-adolescente" min="0" step="0.01" placeholder="Ej. 10,00"></div><button class="btn-secundario" onclick="registrarPagoAdolescente()">Registrar</button></div></div>
+            <div class="grid-premios" id="lista-premios"></div>
+        </div>
+
+        <div id="bloque-config" class="oculto">
+            
+            <div class="subnav-tabs">
+                <button id="subtab-seguridad" class="btn-subnav active" onclick="verSubSeccionConfig('seguridad')">🔒 Seguridad</button>
+                <button id="subtab-usuarios" class="btn-subnav" onclick="verSubSeccionConfig('usuarios')">👥 Usuarios</button>
+                <button id="subtab-graficos" class="btn-subnav" onclick="verSubSeccionConfig('graficos')">📊 Historial</button>
+                <button id="subtab-rangos" class="btn-subnav" onclick="verSubSeccionConfig('rangos')">🏆 Rangos</button>
+                <button id="subtab-categorias-cfg" class="btn-subnav" onclick="verSubSeccionConfig('categorias')">📂 Categorías</button>
+                <button id="subtab-misiones-cfg" class="btn-subnav" onclick="verSubSeccionConfig('misiones')">⚔️ Misiones</button>
+                <button id="subtab-premios-cfg" class="btn-subnav" onclick="verSubSeccionConfig('premios')">🎁 Premios</button>
+                <button id="subtab-datos" class="btn-subnav" onclick="verSubSeccionConfig('datos')">🧪 Datos</button>
+            </div>
+<div id="sub-cfg-seguridad" class="grid-layout">
+                <div class="seccion config-box">
+                    <h2>🔒 PIN Y CONTROL DE BORRADO</h2>
+                    <div class="form-grupo">
+                        <label>PIN de acceso Padres:</label>
+                        <input type="password" id="cfg-pin-seguridad" value="18681" onchange="actualizarPinSeguridad(this)">
+                    </div>
+                    <hr style="border:0; border-top:1px solid #b0bec5; margin:15px 0;">
+                    <label style="font-weight:bold; color:#c62828; font-size:0.9rem; display:block; margin-bottom:5px;">🚨 REINICIAR DATOS DE USUARIO:</label>
+                    <div class="form-grupo">
+                        <label>Selecciona usuario a eliminar:</label>
+                        <select id="cfg-usuario-reset"></select>
+                    </div>
+                    <button class="btn-reset" onclick="ejecutarResetSelector()">⚠️ Ejecutar Reinicio Seleccionado</button>
+                    <hr style="border:0; border-top:1px solid #b0bec5; margin:18px 0;">
+                    <h2 style="font-size:1rem; border:0; padding:0; margin-bottom:10px;">💾 COPIA DE SEGURIDAD</h2>
+                    <div class="backup-actions">
+                        <button class="btn-secundario" onclick="exportarDatos()">⬇️ Exportar datos</button>
+                        <button class="btn-secundario" onclick="document.getElementById('input-importar-datos').click()">⬆️ Importar datos</button>
+                        <button class="btn-secundario" onclick="restaurarBackupAutomatico()">↩️ Restaurar copia automática</button>
+                        <input id="input-importar-datos" type="file" accept="application/json,.json" class="oculto" onchange="importarDatosDesdeArchivo(this)">
+                    </div>
+                    <small style="display:block; color:#546e7a; margin-top:8px;">Permite mover o recuperar la configuración y los puntos en otro navegador/dispositivo.</small>
+                </div>
+
+                <div class="seccion config-box">
+                    <h2>✏️ AJUSTAR MARCADORES DIRECTOS</h2>
+                    <div id="gestion-usuarios-puntos"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-usuarios" class="grid-layout oculto">
+                <div class="seccion config-box" style="grid-column:1/-1;">
+                    <h2>⭐ → € EQUIVALENCIA</h2>
+                    <div class="form-grupo">
+                        <label>Valor de 1 estrella en modo adolescente:</label>
+                        <div style="display:flex;align-items:center;gap:8px;max-width:360px;"><strong>1 ⭐ =</strong><input type="number" id="cfg-equivalencia-euro" value="0.10" min="0" step="0.01" onchange="actualizarEquivalenciaEuro(this)"><strong>€</strong></div>
+                        <small style="color:#546e7a;">Esta equivalencia es global y se aplica automáticamente a todas las tareas y premios en modo adolescente. El total que puede ganar un usuario adolescente está limitado a 10 € por mes.</small>
+                    </div>
+                </div>
+                <div class="seccion config-box">
+                    <h2>👥 AÑADIR USUARIO</h2>
+                    <div class="form-grupo"><label>Nombre:</label><input type="text" id="new-user-name" placeholder="Ej. Alex"></div>
+                    <div class="form-grupo"><label>Modo:</label><select id="new-user-mode"><option value="infantil">Infantil · ⭐ puntos</option><option value="adolescente">Adolescente · € paga</option></select></div>
+                    <div class="form-grupo"><label>Máximo mensual adolescente:</label><input type="number" id="new-user-budget" value="10" min="10" max="10" step="0.01" readonly><small style="color:#546e7a;">El máximo mensual está fijado en 10 €.</small></div>
+                    <div class="form-grupo"><label>Avatar:</label><input type="text" id="new-user-avatar" value="👤" maxlength="8"><div class="avatar-mini-picker"><button type="button" onclick="document.getElementById('new-user-avatar').value='🥷'">🥷</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦸‍♂️'">🦸‍♂️</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦸‍♀️'">🦸‍♀️</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🤖'">🤖</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦁'">🦁</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦄'">🦄</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐉'">🐉</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🧑‍🚀'">🧑‍🚀</button><button type="button" onclick="document.getElementById('new-user-avatar').value='👤'">👤</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐯'">🐯</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐼'">🐼</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐨'">🐨</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦊'">🦊</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐺'">🐺</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦅'">🦅</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦉'">🦉</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐙'">🐙</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦈'">🦈</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐬'">🐬</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦖'">🦖</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🦕'">🦕</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🐲'">🐲</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🧙‍♂️'">🧙‍♂️</button><button type="button" onclick="document.getElementById('new-user-avatar').value='🧙‍♀️'">🧙‍♀️</button></div></div>
+                    <button class="btn-crear" onclick="crearNuevoUsuario()">Añadir Usuario</button>
+                </div>
+                <div class="seccion config-box">
+                    <h2>✏️ MODIFICAR USUARIOS</h2>
+                    <div class="lista-gestion" id="gestion-lista-usuarios"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-graficos" class="grid-layout oculto">
+                <div class="seccion" style="grid-column: 1 / -1; background:#f9fbfd; border:1px solid #cfd8dc;">
+                    <div class="grafico-contenedor">
+                        <h3 style="margin-top:0; color:#37474f; text-align:center;">📊 ACTIVIDAD GLOBAL</h3>
+                        <canvas id="chartCompetitivo"></canvas>
+                    </div>
+                    <h2>📅 RESUMEN ÚLTIMOS 7 DÍAS</h2>
+                    <div id="resumen-semanal" class="resumen-semanal"></div>
+                    <h2>🗓️ RESUMEN ÚLTIMOS 30 DÍAS</h2>
+                    <div id="resumen-mensual" class="resumen-mensual"></div>
+                    <div class="grafico-contenedor"><h3 style="margin-top:0;color:#37474f;text-align:center;">📈 Evolución de actividad (30 días)</h3><canvas id="chartEvolucion"></canvas></div>
+                    <h2>📂 ACTIVIDAD POR CATEGORÍA</h2>
+                    <div id="stats-categorias" class="stats-categorias"></div>
+                    <div class="grafico-contenedor"><canvas id="chartCategorias"></canvas></div>
+                    <h2>📜 HISTORIAL COMPLETO DE ACCIONES</h2>
+                    <div class="hist-actions"><button class="btn-secundario" onclick="exportarHistorialCSV()">⬇️ Exportar historial CSV</button></div>
+                    <div class="hist-filtros">
+                        <select id="hist-filter-user" onchange="renderizarHistorialYGrafico()"></select>
+                        <select id="hist-filter-type" onchange="renderizarHistorialYGrafico()"><option value="todos">Ganados y gastados</option><option value="ganado">Solo ganados</option><option value="gastado">Solo gastados</option></select>
+                        <input type="date" id="hist-filter-date" onchange="renderizarHistorialYGrafico()" title="Filtrar por fecha">
+                    </div>
+                    <div id="lista-historial"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-rangos" class="grid-layout oculto">
+                <div class="seccion config-box">
+                    <h2>🏆 CREAR NUEVO RANGO DE HÉROE</h2>
+                    <div class="form-grupo"><label>Nombre del Rango + Emoji:</label><input type="text" id="new-rango-text" placeholder="Ej: Maestro Jedi ⚔️"></div>
+                    <div class="form-grupo"><label>Puntos Históricos requeridos:</label><input type="number" id="new-rango-pts" value="50"></div>
+                    <div class="form-grupo">
+                        <label>Color de fondo asociado a la interfaz:</label>
+                        <input type="color" id="new-rango-color" value="#4A90E2" style="width:100%; height:40px; padding:2px; cursor:pointer;">
+                    </div>
+                    <button class="btn-crear" onclick="crearNuevoRango()">Añadir Rango</button>
+                </div>
+                <div class="seccion config-box">
+                    <h2>📋 MODIFICAR NOMBRE, PUNTOS Y COLOR</h2>
+                    <div class="lista-gestion" id="gestion-lista-rangos"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-categorias" class="grid-layout oculto">
+                <div class="seccion config-box">
+                    <h2>📂 CREAR NUEVA CATEGORÍA</h2>
+                    <div class="form-grupo"><label>ID Interno único (sin espacios):</label><input type="text" id="new-cat-id" placeholder="Ej: sec-deporte"></div>
+                    <div class="form-grupo"><label>Título visible + Emojis:</label><input type="text" id="new-cat-title" placeholder="Ej: ⚽ DEPORTE Y SALUD"></div>
+                    <button class="btn-crear" onclick="crearNuevaCategoria()">Añadir Categoría</button>
+                </div>
+                <div class="seccion config-box">
+                    <h2>✏️ MODIFICAR NOMBRE Y ELIMINAR CATEGORÍAS</h2>
+                    <div class="lista-gestion" id="gestion-lista-categorias"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-misiones" class="grid-layout oculto">
+                <div class="seccion config-box">
+                    <h2>⚔️ AÑADIR NUEVA MISIÓN</h2>
+                    <div class="form-grupo"><label>Nombre:</label><input type="text" id="new-mision-text" placeholder="Ej. Sacar la basura"></div>
+                    <div class="form-grupo"><label>Categoría:</label><select id="new-mision-cat"></select></div>
+                    <div class="form-grupo"><label>Disponible para:</label><select id="new-mision-user"></select></div>
+                    <div class="form-grupo"><label class="switch-inline"><input type="checkbox" id="new-mision-activa" checked> Misión activa</label></div>
+                    <div class="form-grupo"><label>Puntos infantil (+):</label><input type="number" id="new-mision-pts" value="2"></div>
+                    <div class="form-grupo"><label>Equivalencia automática:</label><div class="equivalencia-badge">Se calculará según la relación global ⭐ → €</div></div>
+                    <div class="form-grupo">
+                        <label>Límite de repetición:</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <input type="number" id="new-mision-limite" value="0" min="0">
+                            <select id="new-mision-periodo"><option value="dia">por día</option><option value="semana">por semana</option><option value="mes">por mes</option></select>
+                        </div>
+                        <small style="color:#546e7a;">0 = sin límite. Para objetivos semanales o mensuales selecciona el período correspondiente.</small>
+                    </div>
+                    <button class="btn-crear" onclick="crearNuevaMision()">Guardar Misión</button>
+                </div>
+                <div class="seccion config-box">
+                    <h2>✏️ MODIFICAR, ACTIVAR Y ORDENAR MISIONES</h2>
+                    <div class="lista-gestion" id="gestion-lista-misiones"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-premios" class="grid-layout oculto">
+                <div class="seccion config-box">
+                    <h2>🎁 AÑADIR NUEVO PREMIO</h2>
+                    <div class="form-grupo"><label>Nombre recompensa:</label><input type="text" id="new-premio-text" placeholder="Ej. Un helado"></div>
+                    <div class="form-grupo"><label>Coste infantil (puntos):</label><input type="number" id="new-premio-pts" value="20"></div>
+                    <div class="form-grupo"><label>Equivalencia automática:</label><div class="equivalencia-badge">Se calculará según la relación global ⭐ → €</div></div>
+                    <div class="form-grupo"><label>Límite de canjes por usuario (0 = ilimitado):</label><input type="number" id="new-premio-limite" value="0" min="0"></div>
+                    <div class="form-grupo"><label class="switch-inline"><input type="checkbox" id="new-premio-activo" checked> Premio activo</label></div>
+                    <button class="btn-crear" onclick="crearNuevoPremio()">Guardar Premio</button>
+                </div>
+                <div class="seccion config-box">
+                    <h2>✏️ MODIFICAR, ACTIVAR Y ORDENAR PREMIOS</h2>
+                    <div class="lista-gestion" id="gestion-lista-premios"></div>
+                </div>
+            </div>
+
+            <div id="sub-cfg-datos" class="grid-layout oculto">
+                <div class="seccion config-box" style="grid-column:1/-1;">
+                    <h2>🧪 ESTADO DE DATOS</h2>
+                    <p style="color:#546e7a; margin-top:0;">Comprobaciones de consistencia del fichero y del almacenamiento local.</p>
+                    <div id="estado-datos-lista" class="estado-datos-grid"></div>
+                    <div class="hist-actions">
+                        <button class="btn-secundario" onclick="renderizarEstadoDatos()">🔄 Volver a comprobar</button>
+                        <button class="btn-secundario" onclick="crearBackupAutomatico('manual')">💾 Crear copia automática ahora</button>
+                        <button class="btn-secundario" onclick="restaurarBackupAutomatico()">↩️ Restaurar última copia automática</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // BANCO DE DATOS SEMILLA BASE
+        var categoriasBase = [
+            {id:"sec-esfuerzo", txt:"💪 ESFUERZO Y RESPONSABILIDAD"},
+            {id:"sec-hogar", txt:"🏠 TAREAS DEL HOGAR"},
+            {id:"sec-ayuda", txt:"🤝 AYUDA Y CONVIVENCIA"},
+            {id:"sec-empatia", txt:"❤️ EMPATÍA Y GESTIÓN EMOCIONAL"},
+            {id:"sec-actitud", txt:"🌟 ACTITUD Y CRECIMIENTO PERSONAL"}
+        ];
+
+        var misionesBase = [
+            {id:"mid_1", idCat:"sec-esfuerzo", txt:"Hacer la cama", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_2", idCat:"sec-esfuerzo", txt:"Leer 15 minutos", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_3", idCat:"sec-esfuerzo", txt:"Preparar la mochila para el día siguiente", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_4", idCat:"sec-esfuerzo", txt:"Hacer los deberes sin que me lo recuerden", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_5", idCat:"sec-esfuerzo", txt:"Preparar la ropa del día siguiente", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_6", idCat:"sec-esfuerzo", txt:"Revisar que llevo todo antes de salir", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_7", idCat:"sec-esfuerzo", txt:"Practicar durante 15 minutos algo que me cuesta", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_8", idCat:"sec-esfuerzo", txt:"Terminar una tarea antes de empezar otra", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_9", idCat:"sec-esfuerzo", txt:"Recordar una responsabilidad sin que me avisen", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_10", idCat:"sec-esfuerzo", txt:"Cumplir el objetivo de la semana", pts:5, limite:1, periodoLimite:"semana", euros:null},
+            {id:"mid_11", idCat:"sec-esfuerzo", txt:"Cumplir el objetivo del mes", pts:10, limite:1, periodoLimite:"mes", euros:null},
+
+            {id:"mid_12", idCat:"sec-hogar", txt:"Recoger y organizar mi habitación", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_13", idCat:"sec-hogar", txt:"Poner la mesa", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_14", idCat:"sec-hogar", txt:"Quitar la mesa", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_15", idCat:"sec-hogar", txt:"Llevar la ropa sucia al cesto", pts:1, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_16", idCat:"sec-hogar", txt:"Guardar la ropa limpia", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_17", idCat:"sec-hogar", txt:"Cargar el lavavajillas", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_18", idCat:"sec-hogar", txt:"Vaciar el lavavajillas", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_19", idCat:"sec-hogar", txt:"Sacar la basura o el reciclaje", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_20", idCat:"sec-hogar", txt:"Recoger mis cosas de las zonas comunes", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_21", idCat:"sec-hogar", txt:"Dejar el baño recogido después de usarlo", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_22", idCat:"sec-hogar", txt:"Ayudar a preparar el desayuno, merienda o cena", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_23", idCat:"sec-hogar", txt:"Barrer o aspirar una habitación", pts:3, limite:1, periodoLimite:"dia", euros:null},
+
+            {id:"mid_24", idCat:"sec-ayuda", txt:"Ayudar a mi hermano en algo concreto", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_25", idCat:"sec-ayuda", txt:"Cumplir una petición sin protestar ni discutir", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_26", idCat:"sec-ayuda", txt:"Hacer una tarea de casa adicional", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_27", idCat:"sec-ayuda", txt:"Respetar cuando alguien pide espacio o tranquilidad", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_28", idCat:"sec-ayuda", txt:"Ayudar sin que me lo pidan", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_29", idCat:"sec-ayuda", txt:"Compartir algo que estoy usando cuando otra persona lo necesita", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_30", idCat:"sec-ayuda", txt:"Decir algo bonito a alguien", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_31", idCat:"sec-ayuda", txt:"Preguntar si alguien necesita ayuda", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_32", idCat:"sec-ayuda", txt:"Cumplir un acuerdo familiar", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_33", idCat:"sec-ayuda", txt:"Respetar el turno de otra persona", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_34", idCat:"sec-ayuda", txt:"Resolver un desacuerdo hablando", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_35", idCat:"sec-ayuda", txt:"Ayudar a preparar algo para toda la familia", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_36", idCat:"sec-ayuda", txt:"Enseñar o explicar algo a otra persona con paciencia", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_37", idCat:"sec-ayuda", txt:"Incluir a otra persona en una actividad o juego", pts:3, limite:2, periodoLimite:"dia", euros:null},
+
+            {id:"mid_38", idCat:"sec-empatia", txt:"Hablar con respeto", pts:2, limite:3, periodoLimite:"dia", euros:null},
+            {id:"mid_39", idCat:"sec-empatia", txt:"Parar y respirar antes de responder enfadado", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_40", idCat:"sec-empatia", txt:"Explicar cómo me siento sin gritar", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_41", idCat:"sec-empatia", txt:"Escuchar sin interrumpir", pts:2, limite:3, periodoLimite:"dia", euros:null},
+            {id:"mid_42", idCat:"sec-empatia", txt:"Pedir perdón explicando qué hice mal", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_43", idCat:"sec-empatia", txt:"Preguntar a alguien cómo se siente", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_44", idCat:"sec-empatia", txt:"Esperar mi turno sin protestar", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_45", idCat:"sec-empatia", txt:"Pedir ayuda antes de frustrarme demasiado", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_46", idCat:"sec-empatia", txt:"Reconocer que me he equivocado", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_47", idCat:"sec-empatia", txt:"Aceptar un no sin discutir", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_48", idCat:"sec-empatia", txt:"Buscar una solución después de un conflicto", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_49", idCat:"sec-empatia", txt:"Explicar qué necesito en lugar de enfadarme", pts:3, limite:2, periodoLimite:"dia", euros:null},
+
+            {id:"mid_50", idCat:"sec-actitud", txt:"Buscar una solución en vez de quedarme en la queja", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_51", idCat:"sec-actitud", txt:"Hacer una tarea que me cuesta empezar sin quejarme", pts:3, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_52", idCat:"sec-actitud", txt:"Mantener una buena actitud en una situación difícil", pts:4, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_53", idCat:"sec-actitud", txt:"Decir 3 cosas buenas de mí", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_54", idCat:"sec-actitud", txt:"Mejorar hoy algo que ayer me costó", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_55", idCat:"sec-actitud", txt:"Probar algo nuevo", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_56", idCat:"sec-actitud", txt:"Decir una cosa que he hecho bien hoy", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_57", idCat:"sec-actitud", txt:"Decir una cosa que puedo mejorar mañana", pts:2, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_58", idCat:"sec-actitud", txt:"Agradecer algo que alguien ha hecho por mí", pts:2, limite:2, periodoLimite:"dia", euros:null},
+            {id:"mid_59", idCat:"sec-actitud", txt:"Cumplir una pequeña meta personal", pts:4, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_60", idCat:"sec-actitud", txt:"Organizar mi tiempo sin que me lo recuerden", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_61", idCat:"sec-actitud", txt:"Tener un rato sin pantalla por iniciativa propia", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_62", idCat:"sec-actitud", txt:"Preparar algo por iniciativa propia", pts:3, limite:1, periodoLimite:"dia", euros:null},
+            {id:"mid_63", idCat:"sec-actitud", txt:"Terminar el día dejando mis cosas preparadas", pts:3, limite:1, periodoLimite:"dia", euros:null}
+        ];
+
+        var usuariosBase = [{id:'Jan', nombre:'Jan', modo:'infantil', presupuestoMensual:10}, {id:'Martin', nombre:'Martín', modo:'infantil', presupuestoMensual:10}];
+
+        var premiosBase = [
+            {id:"pid_1", txt:"Elegir postre especial", pts:15}, {id:"pid_2", txt:"Cine en casa 🍿", pts:30}, {id:"pid_3", txt:"Cabaña de mantas en el salón", pts:50}, {id:"pid_4", txt:"Cena en su sitio favorito 🍔", pts:100}
+        ];
+
+        var rangosBase = [
+            {txt:"Recluta ⚔️", pts:0, color:"#4A90E2"}, 
+            {txt:"Guerrero 🛡️", pts:25, color:"#2E7D32"}, 
+            {txt:"Guardián 🔮", pts:60, color:"#7B1FA2"}, 
+            {txt:"Héroe de Élite ⚡", pts:120, color:"#E65100"}, 
+            {txt:"Leyenda Inmortal 👑", pts:250, color:"#B7950B"}
+        ];
+
+        // INICIALIZACIÓN CON TARJETA DE LOCALSTORAGE ÚNICA
+        function initStorage(clave, defecto) {
+            if(!localStorage.getItem(clave)) localStorage.setItem(clave, JSON.stringify(defecto));
+        }
+        initStorage('dinamico_usuarios', usuariosBase);
+        initStorage('dinamico_categorias', categoriasBase);
+        initStorage('dinamico_misiones', misionesBase);
+        initStorage('dinamico_premios', premiosBase);
+        initStorage('dinamico_rangos', rangosBase);
+        initStorage('mision_registro_premios', {});
+        if(!localStorage.getItem('mision_pin_seguridad')) localStorage.setItem('mision_pin_seguridad', '18681');
+
+        var usuarioActual = 'Jan';
+        var puntos = 0;
+        var puntosHistoricos = 0;
+        var avatar = '👤';
+        var historialGlobal = []; 
+        var registroLimites = {};
+        var registroPremios = {};
+        var ultimaAccion = null;
+        var miGrafico = null;
+        var miGraficoEvolucion = null;
+        var miGraficoCategorias = null;
+        var APP_SCHEMA_VERSION = 5;
+        var estadoApp = { categorias:[], misiones:[], premios:[], rangos:[], usuarios:[] };
+        var dragContext = null;
+
+        function leerJSON(clave, defecto) {
+            try { var v = JSON.parse(localStorage.getItem(clave)); return v ?? defecto; }
+            catch(e) { return defecto; }
+        }
+        function guardarJSON(clave, valor) { localStorage.setItem(clave, JSON.stringify(valor)); }
+        function refrescarEstadoApp() {
+            estadoApp = {
+                usuarios: leerJSON('dinamico_usuarios', usuariosBase),
+                categorias: leerJSON('dinamico_categorias', []),
+                misiones: leerJSON('dinamico_misiones', []),
+                premios: leerJSON('dinamico_premios', []),
+                rangos: leerJSON('dinamico_rangos', [])
+            };
+            return estadoApp;
+        }
+        function obtenerUsuarios() { return (estadoApp.usuarios && estadoApp.usuarios.length ? estadoApp.usuarios : leerJSON('dinamico_usuarios', usuariosBase)); }
+        function nombreUsuario(id) { var u=obtenerUsuarios().find(x=>x.id===id); return u?u.nombre:id; }
+        function usuarioPorId(id){ return obtenerUsuarios().find(x=>x.id===id) || {id:id,nombre:id,modo:'infantil',presupuestoMensual:0}; }
+        function modoUsuario(id){ return usuarioPorId(id).modo==='adolescente'?'adolescente':'infantil'; }
+        function esAdolescente(id){ return modoUsuario(id)==='adolescente'; }
+        function equivalenciaEuro(){ var v=parseFloat(localStorage.getItem('mision_equivalencia_euro')||'0.10'); return Number.isFinite(v)&&v>=0?v:0.10; }
+        function valorAutoEuros(pts){ return Math.round((Number(pts)||0)*equivalenciaEuro()*100)/100; }
+        function formatearNumero(n){ return (Math.round((Number(n)||0)*100)/100).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+        function formatearValor(n,id){ return esAdolescente(id)?formatearNumero(n)+' €':formatearNumero(n)+' ⭐'; }
+        function valorMisionUsuario(m,id){ if(!esAdolescente(id)) return Number(m.pts)||0; return valorAutoEuros(m.pts); }
+        function valorPremioUsuario(p,id){ if(!esAdolescente(id)) return Number(p.pts)||0; return valorAutoEuros(p.pts); }
+        function ganadoMesUsuario(id){ var now=new Date(), y=now.getFullYear(), mo=now.getMonth(); return historialGlobal.filter(h=>h.user===id&&h.tipo==='ganado'&&(!h.unidad||h.unidad===(esAdolescente(id)?'eur':'pts'))).reduce((sum,h)=>{var d=fechaAccion(h);return d&&d.getFullYear()===y&&d.getMonth()===mo?sum+(Number(h.pts)||0):sum;},0); }
+
+        function migrarEsquemaDatos() {
+            var version=parseInt(localStorage.getItem('mision_schema_version')||'1');
+            if(version<5){
+                var ms=leerJSON('dinamico_misiones',[]); ms.forEach(m=>{ if(m.euros===0||m.euros===undefined) m.euros=null; }); guardarJSON('dinamico_misiones',ms);
+                var ps=leerJSON('dinamico_premios',[]); ps.forEach(p=>{ if(p.euros===undefined||p.euros===p.pts) p.euros=null; }); guardarJSON('dinamico_premios',ps);
+                if(localStorage.getItem('mision_equivalencia_euro')===null) localStorage.setItem('mision_equivalencia_euro','0.10');
+                version=5;
+            }
+            localStorage.setItem('mision_schema_version', String(APP_SCHEMA_VERSION));
+        }
+        function asegurarEstructuraDatos() {
+            migrarEsquemaDatos();
+            var usuarios=leerJSON('dinamico_usuarios', usuariosBase); if(!usuarios.length)usuarios=JSON.parse(JSON.stringify(usuariosBase)); usuarios.forEach(u=>{if(!u.modo)u.modo='infantil';u.presupuestoMensual=10;}); guardarJSON('dinamico_usuarios',usuarios);
+            var cats=leerJSON('dinamico_categorias',[]); cats.forEach((c,i)=>{if(c.orden==null)c.orden=i;}); guardarJSON('dinamico_categorias',cats);
+            var seen=new Set(), ms=leerJSON('dinamico_misiones',[]); var idsExistentes=new Set(ms.map(m=>m.id)); misionesBase.forEach(base=>{if(!idsExistentes.has(base.id)) ms.push(JSON.parse(JSON.stringify(base)));}); ms.forEach((m,i)=>{if(!m.id||seen.has(m.id))m.id='mid_'+Date.now()+'_'+i;seen.add(m.id);if(m.usuario==null)m.usuario='*';if(m.activa==null)m.activa=true;if(m.orden==null)m.orden=i;if(m.euros===undefined)m.euros=null;if(!m.periodoLimite)m.periodoLimite=(m.id==='mid_10'?'semana':m.id==='mid_11'?'mes':'dia');}); guardarJSON('dinamico_misiones',ms);
+            var ps=leerJSON('dinamico_premios',[]); ps.forEach((x,i)=>{if(x.activo==null)x.activo=true;if(x.limiteCanjes==null)x.limiteCanjes=0;if(x.orden==null)x.orden=i;if(x.euros===undefined)x.euros=null;}); guardarJSON('dinamico_premios',ps);
+            asegurarIdsRangos(); refrescarEstadoApp();
+        }
+        function renderizarUsuariosUI() {
+            refrescarEstadoApp();
+            var usuarios=estadoApp.usuarios, selector=document.getElementById('user-select'), actual=(selector&&selector.value)||usuarioActual;
+            if(selector){selector.innerHTML=usuarios.map(u=>`<option value="${escaparAtributo(u.id)}">${escaparHTML(u.nombre)}</option>`).join('');selector.value=usuarios.some(u=>u.id===actual)?actual:(usuarios[0]?.id||'');}
+            var eq=document.getElementById('cfg-equivalencia-euro'); if(eq) eq.value=equivalenciaEuro().toFixed(2);
+            var reset=document.getElementById('cfg-usuario-reset'); if(reset)reset.innerHTML=usuarios.map(u=>`<option value="${escaparAtributo(u.id)}">${escaparHTML(u.nombre)}</option>`).join('')+'<option value="__todos__">💥 TODOS LOS USUARIOS</option>';
+            var pp=document.getElementById('gestion-usuarios-puntos');
+            if(pp) pp.innerHTML=usuarios.map(u=>{var teen=u.modo==='adolescente',unit=teen?'€':'⭐',step=teen?'0.01':'1';return `<div class="editor-puntos-item"><span><strong>${escaparHTML(u.nombre)} · ${teen?'Saldo / Ganado total':'Disponibles / Histórico'} (${unit})</strong></span><div style="display:flex;gap:5px;"><input type="number" step="${step}" id="edit-pts-${escaparAtributo(u.id)}" value="${localStorage.getItem('mision_p_'+u.id)||0}" onchange="modificarPuntosDirecto('${escaparAtributo(u.id)}','p',this)"><input type="number" step="${step}" id="edit-pts-h-${escaparAtributo(u.id)}" value="${localStorage.getItem('mision_h_pts_'+u.id)||0}" style="background:#f0f0f0;" onchange="modificarPuntosDirecto('${escaparAtributo(u.id)}','h',this)"></div></div>`;}).join('');
+            var panel=document.getElementById('gestion-lista-usuarios');
+            if(panel) panel.innerHTML=usuarios.map(u=>`<div class="item-gestion usuario-gestion" style="grid-template-columns:58px minmax(120px,1fr) minmax(125px,.8fr) 110px auto;"><input class="usuario-avatar-input" value="${escaparAtributo(localStorage.getItem('mision_a_'+u.id)||'👤')}" maxlength="8" onchange="modificarAvatarUsuario('${escaparAtributo(u.id)}',this.value,this)"><input type="text" class="input-texto-editable" value="${escaparAtributo(u.nombre)}" onchange="modificarNombreUsuario('${escaparAtributo(u.id)}',this.value,this)"><select class="input-modo-usuario" onchange="modificarModoUsuario('${escaparAtributo(u.id)}',this.value,this)"><option value="infantil" ${u.modo!=='adolescente'?'selected':''}>⭐ Infantil</option><option value="adolescente" ${u.modo==='adolescente'?'selected':''}>€ Adolescente</option></select><input class="presupuesto-input" type="number" min="0" step="0.01" title="Máximo mensual fijado en 10 €" value="10" readonly onchange="modificarPresupuestoUsuario('${escaparAtributo(u.id)}',this.value,this)"><button class="btn-borrar" title="Eliminar usuario" onclick="eliminarUsuario('${escaparAtributo(u.id)}')">${iconoPapeleraSVG()}</button></div>`).join('');
+            var nm=document.getElementById('new-mision-user'); if(nm)nm.innerHTML='<option value="*">👥 Todos los usuarios</option>'+usuarios.map(u=>`<option value="${escaparAtributo(u.id)}">${escaparHTML(u.nombre)} · ${u.modo==='adolescente'?'€':'⭐'}</option>`).join('');
+            var hf=document.getElementById('hist-filter-user'); if(hf){var prev=hf.value||'todos';hf.innerHTML='<option value="todos">Todos los usuarios</option>'+usuarios.map(u=>`<option value="${escaparAtributo(u.id)}">${escaparHTML(u.nombre)}</option>`).join('');if([...hf.options].some(o=>o.value===prev))hf.value=prev;}
+        }
+
+        function cargarDatosUsuario() {
+            renderizarUsuariosUI(); usuarioActual=document.getElementById('user-select').value; puntos=parseFloat(localStorage.getItem('mision_p_'+usuarioActual)||0); puntosHistoricos=parseFloat(localStorage.getItem('mision_h_pts_'+usuarioActual)||0); avatar=localStorage.getItem('mision_a_'+usuarioActual)||'👤'; historialGlobal=JSON.parse(localStorage.getItem('mision_global_historial')||'[]'); registroLimites=JSON.parse(localStorage.getItem('mision_registro_limites')||'{}'); registroPremios=JSON.parse(localStorage.getItem('mision_registro_premios')||'{}'); actualizarPantalla(); renderizarListasDinamicas(); actualizarInputsConfig();
+        }
+
+        function guardarDatosUsuario() {
+            localStorage.setItem('mision_p_'+usuarioActual,puntos); localStorage.setItem('mision_h_pts_'+usuarioActual,puntosHistoricos); localStorage.setItem('mision_a_'+usuarioActual,avatar); localStorage.setItem('mision_global_historial',JSON.stringify(historialGlobal)); localStorage.setItem('mision_registro_limites',JSON.stringify(registroLimites)); localStorage.setItem('mision_registro_premios',JSON.stringify(registroPremios));
+        }
+
+        function obtenerRango(pts) {
+            var rangos = JSON.parse(localStorage.getItem('dinamico_rangos')) || rangosBase;
+            var rangosOrdenados = [...rangos].sort((a,b) => b.pts - a.pts);
+            for(var i=0; i<rangosOrdenados.length; i++) {
+                if(pts >= rangosOrdenados[i].pts) {
+                    aplicarEstiloPorColorRango(rangosOrdenados[i].color);
+                    return rangosOrdenados[i].txt;
+                }
+            }
+            aplicarEstiloPorColorRango("#4A90E2");
+            return "Recluta ⚔️";
+        }
+
+        function aplicarEstiloPorColorRango(hexColor) {
+            var r = document.documentElement;
+            r.style.setProperty('--color-primario', hexColor);
+            r.style.setProperty('--color-secundario', hexColor);
+            r.style.setProperty('--color-fondo-cabecera', hexColor);
+            r.style.setProperty('--color-sombra-pestana', hexColor + '4D');
+            document.body.style.background = hexColor + '08';
+        }
+
+        function actualizarProgresoRango(){
+            var rangos=[...(refrescarEstadoApp().rangos||[])].sort((a,b)=>a.pts-b.pts);
+            var actual=rangos.filter(r=>puntosHistoricos>=r.pts).pop()||rangos[0];
+            var sig=rangos.find(r=>r.pts>puntosHistoricos);
+            var bar=document.getElementById('rango-progreso-bar'),txt=document.getElementById('rango-progreso-texto');
+            if(!bar||!txt)return;
+            if(!sig){bar.style.width='100%';txt.textContent='Rango máximo alcanzado';return;}
+            var base=actual?actual.pts:0, tramo=Math.max(1,sig.pts-base), pct=Math.max(0,Math.min(100,Math.round(((puntosHistoricos-base)/tramo)*100)));
+            bar.style.width=pct+'%'; txt.textContent='Faltan '+Math.max(0,sig.pts-puntosHistoricos)+' pts para '+sig.txt;
+        }
+
+        function actualizarPantalla() {
+            var teen=esAdolescente(usuarioActual), u=usuarioPorId(usuarioActual);
+            document.body.classList.toggle('modo-adolescente',teen);
+            document.getElementById('marcador').textContent = formatearNumero(puntos);
+            document.getElementById('marcador-historico').textContent = formatearNumero(puntosHistoricos);
+            document.getElementById('unidad-principal').textContent = teen?'€':'⭐';
+            document.getElementById('unidad-historica').textContent = teen?'€':'⭐';
+            document.getElementById('saldo-label').textContent = teen?'Saldo de paga disponible':'Saldo disponible';
+            document.getElementById('historico-texto').textContent = teen?'ganados en total':'ganados en total';
+            document.getElementById('current-avatar').textContent = avatar;
+            document.getElementById('tab-premios-texto').textContent = teen?'Ahorro':'Premios';
+            document.getElementById('titulo-premios').textContent = teen?'💶 AHORRO Y OBJETIVOS':'🎁 TIENDA DE RECOMPENSAS';
+            var rango=document.getElementById('rango-etiqueta');
+            if(teen){rango.textContent='Paga mensual'; aplicarEstiloPorColorRango('#455A64'); actualizarProgresoPresupuesto(u);} else {rango.textContent='Rango: '+obtenerRango(puntosHistoricos); actualizarProgresoRango();}
+        }
+        function actualizarProgresoPresupuesto(u){
+            var bar=document.getElementById('rango-progreso-bar'),txt=document.getElementById('rango-progreso-texto'); if(!bar||!txt)return;
+            var presupuesto=10, ganado=ganadoMesUsuario(u.id);
+            if(!presupuesto){bar.style.width='0%';txt.textContent='Sin límite mensual · '+formatearValor(ganado,u.id)+' este mes';return;}
+            var pct=Math.min(100,Math.round(ganado/presupuesto*100));bar.style.width=pct+'%';txt.textContent=formatearValor(ganado,u.id)+' / '+formatearValor(presupuesto,u.id)+' este mes';
+        }
+
+        function actualizarInputsConfig() { var pin=document.getElementById('cfg-pin-seguridad'); if(pin)pin.value=localStorage.getItem('mision_pin_seguridad')||'18681'; renderizarUsuariosUI(); }
+
+        function cambiarUsuario() {
+            cargarDatosUsuario();
+            cerrarConfigYVolver();
+        }
+
+        function getFechaHoyStr() {
+            var d = new Date();
+            return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+        }
+
+        function getFechaHoraAccion(){var ahora=new Date();return{ts:ahora.toISOString(),fecha:ahora.getDate()+'/'+(ahora.getMonth()+1)+' '+ahora.getHours()+':'+String(ahora.getMinutes()).padStart(2,'0')}}
+        function clavePeriodoMision(periodo){
+            var d=new Date();
+            if(periodo==='mes') return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+            if(periodo==='semana'){
+                var x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+                var day=x.getUTCDay()||7; x.setUTCDate(x.getUTCDate()+4-day);
+                var y=new Date(Date.UTC(x.getUTCFullYear(),0,1));
+                var week=Math.ceil((((x-y)/86400000)+1)/7);
+                return x.getUTCFullYear()+'-W'+String(week).padStart(2,'0');
+            }
+            return getFechaHoyStr();
+        }
+        function textoPeriodo(periodo){return periodo==='semana'?'semana':periodo==='mes'?'mes':'día';}
+        function premiosDisponibles(pts,userId){var ps=leerJSON('dinamico_premios',[]);return ps.filter(p=>{var coste=valorPremioUsuario(p,userId);if(p.activo===false||pts<coste)return false;var usados=registroPremios[userId+'_'+p.id]||0;return !(p.limiteCanjes>0&&usados>=p.limiteCanjes);});}
+
+        function sumar(n,idMision,nombreMision,limiteMax,periodoLimite){
+            n=Number(n)||0; periodoLimite=['dia','semana','mes'].includes(periodoLimite)?periodoLimite:'dia';
+            var clave=clavePeriodoMision(periodoLimite)+'_'+usuarioActual+'_'+idMision,usos=registroLimites[clave]||0;
+            if(limiteMax>0&&usos>=limiteMax){mostrarToast('Límite por '+textoPeriodo(periodoLimite)+' alcanzado',1500);return;}
+            var teen=esAdolescente(usuarioActual), u=usuarioPorId(usuarioActual), antes=new Set(premiosDisponibles(puntos,usuarioActual).map(p=>p.id));
+            if(teen&&n>0){var limiteMensual=10,ganado=ganadoMesUsuario(usuarioActual),restante=Math.max(0,limiteMensual-ganado);if(restante<=0){mostrarToast('Presupuesto mensual alcanzado',1800);return;}if(n>restante){n=Math.round(restante*100)/100;mostrarToast('Se añade solo el importe restante del presupuesto mensual',2200);}}
+            puntos=Math.round((puntos+n)*100)/100; puntosHistoricos=Math.round((puntosHistoricos+n)*100)/100;
+            if(limiteMax>0)registroLimites[clave]=usos+1;
+            var t=getFechaHoraAccion(),aid='a_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),unidad=teen?'eur':'pts';
+            historialGlobal.unshift({id:aid,tipo:'ganado',user:usuarioActual,userName:nombreUsuario(usuarioActual),detalle:nombreMision,pts:n,unidad:unidad,fecha:t.fecha,ts:t.ts});
+            guardarDatosUsuario();actualizarPantalla();renderizarListasDinamicas();actualizarInputsConfig();ultimaAccion={tipo:'ganado',user:usuarioActual,pts:n,actionId:aid,claveLimite:clave,teniaLimite:limiteMax>0};
+            var nuevos=premiosDisponibles(puntos,usuarioActual).filter(p=>!antes.has(p.id));
+            if(nuevos.length){if(typeof confetti==='function')confetti({particleCount:100,spread:65,origin:{y:.6}});mostrarToast((teen?'💶 Objetivo disponible: ':'🎁 Ya puedes conseguir: ')+nuevos.map(p=>p.txt).join(', '),5000,true);}
+            else if(teen&&n===0)mostrarToast('Responsabilidad completada ✓',3000,true); else mostrarToast('+'+formatearValor(n,usuarioActual)+' añadido a '+nombreUsuario(usuarioActual),4500,true);
+        }
+
+        function ejecutarMision(idMision){var m=leerJSON('dinamico_misiones',[]).find(x=>x.id===idMision);if(!m||m.activa===false||(m.usuario!=='*'&&m.usuario!==usuarioActual))return;var valor=valorMisionUsuario(m,usuarioActual), origen=(window.event&&window.event.currentTarget)||null;animarGanancia(origen,valor,usuarioActual);sumar(valor,m.id,m.txt,m.limite,m.periodoLimite||'dia');}
+
+        function tratarRestar(n,nombre){mostrarToast(esAdolescente(usuarioActual)?'Usa el objetivo para registrar el gasto.':'Usa la tarjeta del premio para canjearlo.',1300);}
+
+        async function canjearPremio(idPremio){
+            var p=leerJSON('dinamico_premios',[]).find(x=>x.id===idPremio);if(!p)return;if(p.activo===false){mostrarToast('Este elemento no está disponible',1500);return;}
+            var coste=valorPremioUsuario(p,usuarioActual),clave=usuarioActual+'_'+p.id,usados=registroPremios[clave]||0,teen=esAdolescente(usuarioActual);
+            if(p.limiteCanjes>0&&usados>=p.limiteCanjes){mostrarToast('Límite de usos alcanzado',1600);return;}
+            if(puntos<coste){mostrarToast('Te faltan '+formatearValor(coste-puntos,usuarioActual),1600);return;}
+            var pregunta=teen?'¿Usar '+formatearValor(coste,usuarioActual)+' del saldo para "'+p.txt+'"?':'¿'+nombreUsuario(usuarioActual)+', quieres canjear "'+p.txt+'" por '+formatearValor(coste,usuarioActual)+'?';
+            if(!(await confirmarApp(pregunta,teen?'Usar ahorro':'Canjear premio')))return;
+            puntos=Math.round((puntos-coste)*100)/100;registroPremios[clave]=usados+1;var t=getFechaHoraAccion(),aid='a_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+            historialGlobal.unshift({id:aid,tipo:'gastado',user:usuarioActual,userName:nombreUsuario(usuarioActual),detalle:p.txt,pts:coste,unidad:teen?'eur':'pts',fecha:t.fecha,ts:t.ts});
+            guardarDatosUsuario();actualizarPantalla();actualizarInputsConfig();renderizarListasDinamicas();ultimaAccion={tipo:'gastado',user:usuarioActual,pts:coste,actionId:aid,clavePremio:clave};mostrarToast((teen?'Gasto registrado: -':'Premio canjeado: -')+formatearValor(coste,usuarioActual),4500,true);
+        }
+
+        async function registrarPagoAdolescente(){
+            if(!esAdolescente(usuarioActual))return;var inp=document.getElementById('importe-pago-adolescente'),importe=parseFloat(inp.value||puntos);importe=Math.max(0,Math.min(importe,puntos));if(!importe){mostrarToast('No hay saldo para retirar',1400);return;}
+            if(!(await confirmarApp('Registrar una retirada/paga entregada de '+formatearValor(importe,usuarioActual)+'?','Registrar paga')))return;
+            puntos=Math.round((puntos-importe)*100)/100;var t=getFechaHoraAccion(),aid='a_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);historialGlobal.unshift({id:aid,tipo:'gastado',user:usuarioActual,userName:nombreUsuario(usuarioActual),detalle:'Paga entregada / retirada',pts:importe,unidad:'eur',fecha:t.fecha,ts:t.ts});guardarDatosUsuario();actualizarPantalla();renderizarListasDinamicas();ultimaAccion={tipo:'gastado',user:usuarioActual,pts:importe,actionId:aid};inp.value='';mostrarToast('Retirada registrada: -'+formatearValor(importe,usuarioActual),4500,true);
+        }
+
+        function deshacerUltimaAccion(){if(!ultimaAccion)return;var a=ultimaAccion,pUser=parseFloat(localStorage.getItem('mision_p_'+a.user)||0),hUser=parseFloat(localStorage.getItem('mision_h_pts_'+a.user)||0);historialGlobal=JSON.parse(localStorage.getItem('mision_global_historial')||'[]').filter(h=>h.id!==a.actionId);if(a.tipo==='ganado'){localStorage.setItem('mision_p_'+a.user,Math.max(0,pUser-a.pts));localStorage.setItem('mision_h_pts_'+a.user,Math.max(0,hUser-a.pts));registroLimites=JSON.parse(localStorage.getItem('mision_registro_limites')||'{}');if(a.teniaLimite&&registroLimites[a.claveLimite]>0)registroLimites[a.claveLimite]--;localStorage.setItem('mision_registro_limites',JSON.stringify(registroLimites));}else{localStorage.setItem('mision_p_'+a.user,pUser+a.pts);registroPremios=JSON.parse(localStorage.getItem('mision_registro_premios')||'{}');if(a.clavePremio&&registroPremios[a.clavePremio]>0)registroPremios[a.clavePremio]--;localStorage.setItem('mision_registro_premios',JSON.stringify(registroPremios));}localStorage.setItem('mision_global_historial',JSON.stringify(historialGlobal));ultimaAccion=null;cargarDatosUsuario();mostrarToast('Acción deshecha ✓',1400);}
+
+        function triggerFlashEffect(elemento) {
+            if(!elemento) return;
+            var itemPadre = elemento.closest('.item-gestion') || elemento.closest('.editor-puntos-item');
+            if(itemPadre) {
+                itemPadre.classList.add('flash-saved');
+                setTimeout(() => { itemPadre.classList.remove('flash-saved'); }, 450);
+            }
+            mostrarToast('Guardado ✓', 900);
+        }
+
+
+        var toastTimer = null;
+        function mostrarToast(mensaje,duracion,conDeshacer){var toast=document.getElementById('toast-app');if(!toast)return;toast.innerHTML='';var span=document.createElement('span');span.textContent=mensaje;toast.appendChild(span);if(conDeshacer&&ultimaAccion){var b=document.createElement('button');b.className='btn-deshacer';b.textContent='Deshacer';b.onclick=deshacerUltimaAccion;toast.appendChild(b);}toast.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{toast.classList.remove('visible');if(conDeshacer)ultimaAccion=null;},duracion||1400);}
+
+        function escaparHTML(valor) {
+            return String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function asegurarIdsRangos() {
+            var rangos = JSON.parse(localStorage.getItem('dinamico_rangos')) || [];
+            var cambio = false;
+            rangos.forEach((r, i) => {
+                if(!r.id) { r.id = 'rid_' + Date.now() + '_' + i; cambio = true; }
+            });
+            if(cambio) localStorage.setItem('dinamico_rangos', JSON.stringify(rangos));
+        }
+
+        function escaparAtributo(valor) {
+            return String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        var modalResolver=null;
+        function abrirModalApp(titulo,mensaje,confirmacion){var m=document.getElementById('modal-app'),t=document.getElementById('modal-app-title'),p=document.getElementById('modal-app-message'),c=document.getElementById('modal-app-cancelar'),o=document.getElementById('modal-app-ok');t.textContent=titulo||'Aviso';p.textContent=mensaje||'';c.style.display=confirmacion?'':'none';m.classList.add('visible');return new Promise(resolve=>{modalResolver=resolve;o.onclick=()=>cerrarModalApp(true);c.onclick=()=>cerrarModalApp(false);});}
+        function cerrarModalApp(valor){document.getElementById('modal-app').classList.remove('visible');if(modalResolver){var r=modalResolver;modalResolver=null;r(valor);}}
+        function mostrarAlertaApp(mensaje,titulo){return abrirModalApp(titulo||'Aviso',mensaje,false);}
+        function confirmarApp(mensaje,titulo){return abrirModalApp(titulo||'Confirmación',mensaje,true);}
+        function crearNuevoUsuario(){var nombre=document.getElementById('new-user-name').value.trim(),av=document.getElementById('new-user-avatar').value.trim()||'👤';if(!nombre){mostrarAlertaApp('Introduce un nombre.');return;}var us=obtenerUsuarios(),id='usr_'+Date.now();us.push({id:id,nombre:nombre});localStorage.setItem('dinamico_usuarios',JSON.stringify(us));localStorage.setItem('mision_a_'+id,av);document.getElementById('new-user-name').value='';document.getElementById('new-user-avatar').value='👤';renderizarUsuariosUI();renderizarListasDinamicas();mostrarToast('Usuario añadido ✓',1200);}
+        function modificarNombreUsuario(id,nombre,inputEl){nombre=nombre.trim();var us=obtenerUsuarios(),u=us.find(x=>x.id===id);if(!u)return;if(!nombre){inputEl.value=u.nombre;return;}u.nombre=nombre;localStorage.setItem('dinamico_usuarios',JSON.stringify(us));triggerFlashEffect(inputEl);renderizarUsuariosUI();}
+        function modificarAvatarUsuario(id,av,inputEl){av=av.trim()||'👤';localStorage.setItem('mision_a_'+id,av);inputEl.value=av;if(id===usuarioActual){avatar=av;actualizarPantalla();}triggerFlashEffect(inputEl);renderizarUsuariosUI();}
+        function modificarModoUsuario(id,modo,inputEl){var us=obtenerUsuarios(),u=us.find(x=>x.id===id);if(!u)return;u.modo=modo==='adolescente'?'adolescente':'infantil';u.presupuestoMensual=10;localStorage.setItem('dinamico_usuarios',JSON.stringify(us));triggerFlashEffect(inputEl);refrescarEstadoApp();if(id===usuarioActual)cargarDatosUsuario();else renderizarUsuariosUI();}
+        function actualizarEquivalenciaEuro(inputEl){var v=Math.max(0,parseFloat(inputEl.value||0));localStorage.setItem('mision_equivalencia_euro',String(v));inputEl.value=v.toFixed(2);renderizarListasDinamicas();actualizarPantalla();mostrarToast('Equivalencia actualizada: 1 ⭐ = '+v.toFixed(2)+' €',1400);}
+        function modificarPresupuestoUsuario(id,v,inputEl){var us=obtenerUsuarios(),u=us.find(x=>x.id===id);if(!u)return;u.presupuestoMensual=10;inputEl.value='10.00';localStorage.setItem('dinamico_usuarios',JSON.stringify(us));triggerFlashEffect(inputEl);refrescarEstadoApp();if(id===usuarioActual)actualizarPantalla();}
+
+        async function eliminarUsuario(id){var us=obtenerUsuarios();if(us.length<=1){mostrarAlertaApp('Debe existir al menos un usuario.');return;}var u=us.find(x=>x.id===id);if(!u||!(await confirmarApp('¿Eliminar el usuario "'+u.nombre+'"? Sus puntos se borrarán; su historial se conservará.','Eliminar usuario')))return;us=us.filter(x=>x.id!==id);localStorage.setItem('dinamico_usuarios',JSON.stringify(us));['mision_p_','mision_h_pts_','mision_a_'].forEach(k=>localStorage.removeItem(k+id));var ms=JSON.parse(localStorage.getItem('dinamico_misiones'))||[];ms.forEach(m=>{if(m.usuario===id)m.usuario='*';});localStorage.setItem('dinamico_misiones',JSON.stringify(ms));if(usuarioActual===id)usuarioActual=us[0].id;renderizarUsuariosUI();document.getElementById('user-select').value=usuarioActual;cargarDatosUsuario();mostrarToast('Usuario eliminado',1200);}
+        function modificarUsuarioMisionExistente(id,usr,inputEl){var a=JSON.parse(localStorage.getItem('dinamico_misiones'))||[],x=a.find(y=>y.id===id);if(!x)return;x.usuario=usr;localStorage.setItem('dinamico_misiones',JSON.stringify(a));triggerFlashEffect(inputEl);setTimeout(renderizarListasDinamicas,250);}
+        function modificarActivaMision(id,v,inputEl){var a=JSON.parse(localStorage.getItem('dinamico_misiones'))||[],x=a.find(y=>y.id===id);if(!x)return;x.activa=!!v;localStorage.setItem('dinamico_misiones',JSON.stringify(a));triggerFlashEffect(inputEl);renderizarListasDinamicas();}
+        function modificarActivoPremio(id,v,inputEl){var a=JSON.parse(localStorage.getItem('dinamico_premios'))||[],x=a.find(y=>y.id===id);if(!x)return;x.activo=!!v;localStorage.setItem('dinamico_premios',JSON.stringify(a));triggerFlashEffect(inputEl);renderizarListasDinamicas();}
+        function modificarLimitePremio(id,v,inputEl){var a=JSON.parse(localStorage.getItem('dinamico_premios'))||[],x=a.find(y=>y.id===id);if(!x)return;x.limiteCanjes=Math.max(0,parseInt(v||0));inputEl.value=x.limiteCanjes;localStorage.setItem('dinamico_premios',JSON.stringify(a));triggerFlashEffect(inputEl);renderizarListasDinamicas();}
+        function moverElemento(tipo,id,direccion){var clave=tipo==='categorias'?'dinamico_categorias':tipo==='misiones'?'dinamico_misiones':'dinamico_premios',a=JSON.parse(localStorage.getItem(clave))||[],idx=a.findIndex(x=>x.id===id);if(idx<0)return;var cand=a.map((x,i)=>({x,i}));if(tipo==='misiones')cand=cand.filter(o=>o.x.idCat===a[idx].idCat);var pos=cand.findIndex(o=>o.i===idx),dest=pos+direccion;if(dest<0||dest>=cand.length)return;var j=cand[dest].i;[a[idx],a[j]]=[a[j],a[idx]];a.forEach((x,i)=>x.orden=i);localStorage.setItem(clave,JSON.stringify(a));renderizarListasDinamicas();mostrarToast('Orden actualizado ✓',800);}
+        function controlesOrden(tipo,id){return '<span class="drag-handle" draggable="true" title="Arrastra para ordenar" ondragstart="iniciarArrastre(event,\''+tipo+'\',\''+escaparAtributo(id)+'\')">⋮⋮</span>';}
+
+        function iniciarArrastre(ev,tipo,id){dragContext={tipo:tipo,id:id};var item=ev.target.closest('.item-gestion');if(item)item.classList.add('dragging');ev.dataTransfer.effectAllowed='move';}
+        function permitirDrop(ev){ev.preventDefault();var item=ev.target.closest('.item-gestion');if(item)item.classList.add('drag-over');}
+        function limpiarDrop(ev){var item=ev.target.closest('.item-gestion');if(item)item.classList.remove('drag-over');}
+        function soltarArrastre(ev,tipo,targetId){ev.preventDefault();document.querySelectorAll('.dragging,.drag-over').forEach(x=>x.classList.remove('dragging','drag-over'));if(!dragContext||dragContext.tipo!==tipo||dragContext.id===targetId)return;var clave=tipo==='categorias'?'dinamico_categorias':tipo==='misiones'?'dinamico_misiones':'dinamico_premios',a=leerJSON(clave,[]),from=a.findIndex(x=>x.id===dragContext.id),to=a.findIndex(x=>x.id===targetId);if(from<0||to<0)return;if(tipo==='misiones'&&a[from].idCat!==a[to].idCat){mostrarToast('Solo puedes ordenar misiones dentro de la misma categoría',1800);return;}var [mov]=a.splice(from,1);a.splice(to,0,mov);a.forEach((x,i)=>x.orden=i);guardarJSON(clave,a);dragContext=null;renderizarListasDinamicas();mostrarToast('Orden actualizado ✓',800);}
+        function renderizarMisionesPrincipal(st){
+            var categorias=[...st.categorias].sort((a,b)=>(a.orden??0)-(b.orden??0));
+            var misiones=st.misiones, hoyStr=getFechaHoyStr();
+            var vis=misiones.filter(m=>m.activa!==false&&(m.usuario==='*'||m.usuario===usuarioActual));
+            var huer=vis.some(m=>!categorias.some(c=>c.id===m.idCat)||m.idCat==='sin-categoria');
+            var cats=[...categorias], teen=esAdolescente(usuarioActual);
+            if(huer) cats.push({id:'sin-categoria',txt:'📁 SIN CATEGORÍA (HUÉRFANAS)'});
+            var colapsadas=leerJSON('mision_categorias_colapsadas',{}), bloque=document.getElementById('bloque-misiones');
+            bloque.innerHTML='';
+            if(!cats.length){bloque.innerHTML='<div class="seccion"><p class="estado-vacio">No hay categorías ni misiones creadas.</p></div>';return;}
+            var usarDosColumnas=window.innerWidth>700;
+            var columnas=[];
+            if(usarDosColumnas){
+                bloque.innerHTML='<div class="mission-column" data-col="0"></div><div class="mission-column" data-col="1"></div>';
+                columnas=[bloque.querySelector('[data-col="0"]'),bloque.querySelector('[data-col="1"]')];
+            }
+            cats.forEach((c,i)=>{
+                var destino=usarDosColumnas?columnas[i%2]:bloque;
+                destino.insertAdjacentHTML('beforeend',`<div class="seccion ${colapsadas[c.id]?'categoria-colapsada':''}" id="${escaparAtributo(c.id)}"><h2 class="categoria-titulo" onclick="alternarCategoria('${escaparAtributo(c.id)}')"><span>${escaparHTML(c.txt)}</span><button class="categoria-toggle" type="button">${colapsadas[c.id]?'▸':'▾'}</button></h2><div class="lista-items"></div></div>`);
+            });
+            vis.sort((a,b)=>(a.orden??0)-(b.orden??0)).forEach(m=>{
+                var cr=categorias.find(c=>c.id===m.idCat), cid=cr?m.idCat:'sin-categoria', sec=document.getElementById(cid), cont=sec?sec.querySelector('.lista-items'):null;if(!cont)return;
+                var periodo=m.periodoLimite||'dia', clave=clavePeriodoMision(periodo)+'_'+usuarioActual+'_'+m.id, usos=registroLimites[clave]||0, locked=m.limite>0&&usos>=m.limite;
+                var lim=m.limite>0?`<span class="contador-limite">(${usos}/${m.limite} por ${textoPeriodo(periodo)})</span>`:'', catTxt=cr?cr.txt:'Sin categoría', valor=valorMisionUsuario(m,usuarioActual);
+                var etiqueta=teen?(valor>0?'+'+formatearValor(valor,usuarioActual):'0 €'):'+'+formatearNumero(valor);
+                cont.insertAdjacentHTML('beforeend',`<div class="boton-accion ${locked?'bloqueado':''}" data-txt="${escaparAtributo((m.txt+' '+catTxt).toLowerCase())}" ${locked?'':`onclick="ejecutarMision('${escaparAtributo(m.id)}')"`}><div class="texto-mision"><span>${escaparHTML(m.txt)}</span>${lim}</div><span class="${locked?'pts-negro':'pts-verde'}">${locked?'✓ Completada':etiqueta}</span></div>`);
+            });
+            cats.forEach(c=>{var sec=document.getElementById(c.id);if(sec&&!sec.querySelector('.boton-accion'))sec.querySelector('.lista-items').innerHTML='<p class="estado-vacio">Todavía no hay misiones disponibles en esta categoría.</p>';});
+        }
+        function renderizarPremiosPrincipal(st){
+            var premios=[...st.premios].sort((a,b)=>(a.orden??0)-(b.orden??0)), tienda=document.getElementById('lista-premios'), teen=esAdolescente(usuarioActual);
+            tienda.innerHTML=''; var activos=premios.filter(p=>p.activo!==false);
+            if(!activos.length){tienda.innerHTML=`<p class="estado-vacio" style="grid-column:1/-1;">Todavía no hay ${teen?'objetivos':'premios'} disponibles.</p>`;return;}
+            activos.forEach(p=>{
+                var usados=registroPremios[usuarioActual+'_'+p.id]||0, agot=p.limiteCanjes>0&&usados>=p.limiteCanjes, coste=valorPremioUsuario(p,usuarioActual);
+                var pct=coste>0?Math.min(Math.round((puntos/coste)*100),100):100, ok=pct>=100&&!agot;
+                var est=p.limiteCanjes>0?(teen?'Usos: ':'Canjes: ')+usados+'/'+p.limiteCanjes:(teen?'Sin límite de usos':'Canjes ilimitados'), faltan=Math.max(0,coste-puntos);
+                tienda.insertAdjacentHTML('beforeend',`<div class="card-premio ${agot?'inactivo':''}" ${agot?'':`onclick="canjearPremio('${escaparAtributo(p.id)}')"`}><div class="card-premio-meta"><span>${escaparHTML(p.txt)}</span><span style="color:${ok?'#4CAF50':'#333'}">${formatearValor(coste,usuarioActual)}</span></div><div class="premio-estado">${agot?'Agotado · ':''}${est}</div>${faltan>0?`<div class="premio-faltan">Te faltan ${formatearValor(faltan,usuarioActual)}</div>`:`<div class="premio-faltan" style="color:#388e3c;">${teen?'Objetivo alcanzado ✓':'Disponible ✓'}</div>`}<div class="progreso-container"><div class="progreso-barra ${ok?'completado':''}" style="width:${pct}%"></div><div class="progreso-texto">${pct}%</div></div></div>`);
+            });
+        }
+        function renderizarConfigCategorias(st){var categorias=[...st.categorias].sort((a,b)=>(a.orden??0)-(b.orden??0)),pc=document.getElementById('gestion-lista-categorias');pc.innerHTML=categorias.length?'':'<p class="estado-vacio">No hay categorías creadas.</p>';categorias.forEach(c=>pc.insertAdjacentHTML('beforeend','<div class="item-gestion" ondragover="permitirDrop(event)" ondragleave="limpiarDrop(event)" ondrop="soltarArrastre(event,\'categorias\',\''+escaparAtributo(c.id)+'\')">'+controlesOrden('categorias',c.id)+'<strong style="font-size:.8rem;color:#78909c;white-space:nowrap;">['+escaparHTML(c.id)+']</strong><input type="text" class="input-texto-editable" value="'+escaparAtributo(c.txt)+'" onchange="modificarNombreCategoriaExistente(\''+escaparAtributo(c.id)+'\',this.value,this)"><button class="btn-borrar" title="Eliminar categoría" onclick="eliminarCategoriaDirecta(\''+escaparAtributo(c.id)+'\')">'+iconoPapeleraSVG()+'</button></div>'));}
+        function renderizarConfigMisiones(st){
+            var categorias=st.categorias, misiones=st.misiones, usuarios=st.usuarios, pm=document.getElementById('gestion-lista-misiones');
+            pm.innerHTML=misiones.length?'':'<p class="estado-vacio">No hay misiones creadas.</p>';
+            var cc=[...categorias]; if(misiones.some(m=>!categorias.some(c=>c.id===m.idCat)))cc.push({id:'sin-categoria',txt:'📁 SIN CATEGORÍA'});
+            cc.forEach(cat=>{
+                var arr=misiones.filter(m=>(categorias.some(c=>c.id===m.idCat)?m.idCat:'sin-categoria')===cat.id).sort((a,b)=>(a.orden??0)-(b.orden??0)); if(!arr.length)return;
+                pm.insertAdjacentHTML('beforeend',`<div class="cat-gestion-titulo">${escaparHTML(cat.txt)}</div>`);
+                arr.forEach(m=>{
+                    var opts=categorias.map(c=>`<option value="${escaparAtributo(c.id)}" ${c.id===m.idCat?'selected':''}>${escaparHTML(c.txt)}</option>`).join('');
+                    if(!categorias.some(c=>c.id===m.idCat)) opts += `<option value="sin-categoria" selected>📁 SIN CATEGORÍA</option>`;
+                    var uopts='<option value="*" '+(m.usuario==='*'?'selected':'')+'>👥 Todos</option>' + usuarios.map(u=>`<option value="${escaparAtributo(u.id)}" ${m.usuario===u.id?'selected':''}>${escaparHTML(u.nombre)}</option>`).join('');
+                    var eq = formatearNumero(valorAutoEuros(m.pts));
+                    pm.insertAdjacentHTML('beforeend', `<div class="item-gestion gestion-mision ${m.activa===false?'inactivo-config':''}" ondragover="permitirDrop(event)" ondragleave="limpiarDrop(event)" ondrop="soltarArrastre(event,'misiones','${escaparAtributo(m.id)}')"><div class="gestion-mision-top">${controlesOrden('misiones',m.id)}<input type="text" class="input-texto-editable" value="${escaparAtributo(m.txt)}" onchange="modificarNombreMisionExistente('${escaparAtributo(m.id)}',this.value,this)"><button class="btn-borrar" title="Eliminar misión" onclick="eliminarMisionDirecta('${escaparAtributo(m.id)}')">${iconoPapeleraSVG()}</button></div><div class="gestion-mision-controles"><label class="campo-bloque"><span>Categoría</span><select class="select-cat-editable" onchange="modificarCategoriaMisionExistente('${escaparAtributo(m.id)}',this.value,this)">${opts}</select></label><label class="campo-bloque"><span>Usuario</span><select class="select-cat-editable" onchange="modificarUsuarioMisionExistente('${escaparAtributo(m.id)}',this.value,this)">${uopts}</select></label><div class="campo-bloque campo-check"><span>Estado</span><label class="switch-inline"><input type="checkbox" ${m.activa!==false?'checked':''} onchange="modificarActivaMision('${escaparAtributo(m.id)}',this.checked,this)"> Activa</label></div><label class="campo-bloque campo-mini"><span>Límite</span><input type="number" min="0" class="input-pts-editable" value="${m.limite}" onchange="modificarLimiteMisionExistente('${escaparAtributo(m.id)}',this.value,this)"></label><label class="campo-bloque campo-mini"><span>Periodo</span><select class="select-periodo-editable" onchange="modificarPeriodoMisionExistente('${escaparAtributo(m.id)}',this.value,this)"><option value="dia" ${m.periodoLimite==='dia'||!m.periodoLimite?'selected':''}>día</option><option value="semana" ${m.periodoLimite==='semana'?'selected':''}>semana</option><option value="mes" ${m.periodoLimite==='mes'?'selected':''}>mes</option></select></label><label class="campo-bloque campo-mini"><span>Estrellas</span><input type="number" class="input-pts-editable" value="${m.pts}" onchange="modificarPuntosMisionExistente('${escaparAtributo(m.id)}',this.value,this)"></label><div class="campo-bloque"><span>Equivale</span><div class="equivalencia-badge">≈ <strong>${eq} €</strong></div></div></div></div>`);
+                });
+            });
+        }
+        function renderizarConfigPremios(st){
+            var pp=document.getElementById('gestion-lista-premios'),premios=[...st.premios].sort((a,b)=>(a.orden??0)-(b.orden??0));
+            pp.innerHTML=premios.length?'':'<p class="estado-vacio">No hay premios creados.</p>';
+            premios.forEach(p=>{
+                var eq=formatearNumero(valorAutoEuros(p.pts));
+                pp.insertAdjacentHTML('beforeend',`<div class="item-gestion gestion-premio" ondragover="permitirDrop(event)" ondragleave="limpiarDrop(event)" ondrop="soltarArrastre(event,'premios','${escaparAtributo(p.id)}')">${controlesOrden('premios',p.id)}<div class="gestion-premio-controles"><label class="campo-bloque"><span>Premio / objetivo</span><input type="text" class="input-texto-editable" value="${escaparAtributo(p.txt)}" onchange="modificarNombrePremioExistente('${escaparAtributo(p.id)}',this.value,this)"></label><div class="campo-bloque campo-check"><span>Estado</span><label class="switch-inline"><input type="checkbox" ${p.activo!==false?'checked':''} onchange="modificarActivoPremio('${escaparAtributo(p.id)}',this.checked,this)"> Activo</label></div><label class="campo-bloque campo-mini"><span>Límite</span><input type="number" min="0" class="input-pts-editable" value="${p.limiteCanjes}" onchange="modificarLimitePremio('${escaparAtributo(p.id)}',this.value,this)"></label><label class="campo-bloque campo-mini"><span>Estrellas</span><input type="number" class="input-pts-editable" value="${p.pts}" onchange="modificarPuntosPremioExistente('${escaparAtributo(p.id)}',this.value,this)"></label><div class="campo-bloque"><span>Equivale</span><div class="equivalencia-badge">≈ <strong>${eq} €</strong></div></div></div><button class="btn-borrar" title="Eliminar premio/objetivo" onclick="eliminarPremioDirecto('${escaparAtributo(p.id)}')">${iconoPapeleraSVG()}</button></div>`);
+            });
+        }
+        function renderizarConfigRangos(st){var pr=document.getElementById('gestion-lista-rangos');pr.innerHTML=st.rangos.length?'':'<p class="estado-vacio">No hay rangos creados.</p>';[...st.rangos].sort((a,b)=>a.pts-b.pts).forEach(r=>pr.insertAdjacentHTML('beforeend','<div class="item-gestion"><input type="color" class="color-picker-rango" value="'+escaparAtributo(r.color)+'" onchange="modificarAtributoRangoExistente(\''+escaparAtributo(r.id)+'\',&quot;color&quot;,this.value,this)"><input type="text" class="input-texto-editable" value="'+escaparAtributo(r.txt)+'" onchange="modificarAtributoRangoExistente(\''+escaparAtributo(r.id)+'\',&quot;txt&quot;,this.value,this)"><div class="campo-mini"><span>Min:</span><input type="number" class="input-pts-rango" value="'+r.pts+'" onchange="modificarAtributoRangoExistente(\''+escaparAtributo(r.id)+'\',&quot;pts&quot;,this.value,this)"><span>pts</span></div><button class="btn-borrar" title="Eliminar rango" onclick="eliminarRangoDirecto(\''+escaparAtributo(r.id)+'\')">'+iconoPapeleraSVG()+'</button></div>'));}
+        function renderizarListasDinamicas(){
+            var st=refrescarEstadoApp(); renderizarMisionesPrincipal(st); renderizarPremiosPrincipal(st);
+            var sc=document.getElementById('new-mision-cat');if(sc)sc.innerHTML=st.categorias.map(c=>'<option value="'+escaparAtributo(c.id)+'">'+escaparHTML(c.txt)+'</option>').join('');
+            renderizarConfigCategorias(st);renderizarConfigMisiones(st);renderizarConfigPremios(st);renderizarConfigRangos(st);filtrarMisionesPrincipales();
+        }
+        function alternarCategoria(id){var c=leerJSON('mision_categorias_colapsadas',{});c[id]=!c[id];guardarJSON('mision_categorias_colapsadas',c);renderizarMisionesPrincipal(refrescarEstadoApp());filtrarMisionesPrincipales();}
+function iconoPapeleraSVG() {
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>';
+        }
+
+        // FILTRADO DINÁMICO DESDE EL BUSCADOR
+        function filtrarMisionesPrincipales() {
+            var filtro = document.getElementById('buscador-misiones').value.toLowerCase().trim();
+            var bloques = document.querySelectorAll('#bloque-misiones .seccion');
+            bloques.forEach(bloque => {
+                var items = bloque.querySelectorAll('.boton-accion');
+                var visibles = 0;
+                items.forEach(item => {
+                    var texto = item.getAttribute('data-txt') || '';
+                    var coincide = !filtro || texto.includes(filtro);
+                    item.classList.toggle('oculto', !coincide);
+                    if(coincide) visibles++;
+                });
+                var vacio = bloque.querySelector('.estado-vacio');
+                if(filtro) {
+                    bloque.classList.toggle('oculto', visibles === 0);
+                    if(vacio) vacio.classList.add('oculto');
+                } else {
+                    bloque.classList.remove('oculto');
+                    if(vacio) vacio.classList.remove('oculto');
+                }
+            });
+        }
+
+        // EDICIONES EN VIVO CON FEEDBACK VISUAL
+        function modificarNombreCategoriaExistente(idCategoria, nuevoNombre, inputEl) {
+            nuevoNombre = nuevoNombre.trim();
+            var categorias = JSON.parse(localStorage.getItem('dinamico_categorias')) || [];
+            var categoria = categorias.find(c => c.id === idCategoria);
+            if(!categoria) return;
+            if(!nuevoNombre) {
+                inputEl.value = categoria.txt;
+                mostrarAlertaApp("El nombre de la categoría no puede quedar vacío.");
+                return;
+            }
+            categoria.txt = nuevoNombre;
+            localStorage.setItem('dinamico_categorias', JSON.stringify(categorias));
+            triggerFlashEffect(inputEl);
+            renderizarListasDinamicas();
+        }
+
+        function modificarNombreMisionExistente(idMision, nuevoNombre, inputEl) {
+            nuevoNombre = nuevoNombre.trim();
+            var misiones = JSON.parse(localStorage.getItem('dinamico_misiones')) || [];
+            var mision = misiones.find(m => m.id === idMision);
+            if(!mision) return;
+            if(!nuevoNombre) {
+                inputEl.value = mision.txt;
+                mostrarAlertaApp("El nombre de la misión no puede quedar vacío.");
+                return;
+            }
+            mision.txt = nuevoNombre;
+            localStorage.setItem('dinamico_misiones', JSON.stringify(misiones));
+            triggerFlashEffect(inputEl);
+            renderizarListasDinamicas();
+        }
+
+        function modificarCategoriaMisionExistente(idMision, nuevaCategoria, inputEl) {
+            var misiones = JSON.parse(localStorage.getItem('dinamico_misiones')) || [];
+            var categorias = JSON.parse(localStorage.getItem('dinamico_categorias')) || [];
+            if(nuevaCategoria !== 'sin-categoria' && !categorias.some(c => c.id === nuevaCategoria)) return;
+            var m = misiones.find(x => x.id === idMision);
+            if(!m) return;
+            m.idCat = nuevaCategoria;
+            localStorage.setItem('dinamico_misiones', JSON.stringify(misiones));
+            triggerFlashEffect(inputEl);
+            setTimeout(renderizarListasDinamicas, 350);
+        }
+
+        function modificarNombrePremioExistente(idPremio, nuevoNombre, inputEl) {
+            nuevoNombre = nuevoNombre.trim();
+            var premios = JSON.parse(localStorage.getItem('dinamico_premios')) || [];
+            var premio = premios.find(p => p.id === idPremio);
+            if(!premio) return;
+            if(!nuevoNombre) {
+                inputEl.value = premio.txt;
+                mostrarAlertaApp("El nombre del premio no puede quedar vacío.");
+                return;
+            }
+            premio.txt = nuevoNombre;
+            localStorage.setItem('dinamico_premios', JSON.stringify(premios));
+            triggerFlashEffect(inputEl);
+            renderizarListasDinamicas();
+        }
+
+
+        function modificarPeriodoMisionExistente(idMision,nuevoPeriodo,inputEl){
+            var misiones=leerJSON('dinamico_misiones',[]),m=misiones.find(x=>x.id===idMision);if(!m)return;
+            m.periodoLimite=['dia','semana','mes'].includes(nuevoPeriodo)?nuevoPeriodo:'dia';
+            guardarJSON('dinamico_misiones',misiones);triggerFlashEffect(inputEl);renderizarListasDinamicas();
+        }
+
+        function modificarLimiteMisionExistente(idMision, nuevoValor, inputEl) {
+            var misiones = JSON.parse(localStorage.getItem('dinamico_misiones')) || [];
+            var limite = Math.max(0, parseInt(nuevoValor || 0));
+            misiones.forEach(m => { if(m.id === idMision) m.limite = limite; });
+            localStorage.setItem('dinamico_misiones', JSON.stringify(misiones));
+            inputEl.value = limite;
+            triggerFlashEffect(inputEl);
+            setTimeout(renderizarListasDinamicas, 700);
+        }
+
+        function modificarPuntosMisionExistente(idMision, nuevoValor, inputEl) {
+            var misiones = JSON.parse(localStorage.getItem('dinamico_misiones')) || [];
+            misiones.forEach(m => { if(m.id === idMision) m.pts = parseInt(nuevoValor || 0); });
+            localStorage.setItem('dinamico_misiones', JSON.stringify(misiones));
+            triggerFlashEffect(inputEl);
+            // Actualización retardada para no romper la escritura fluida del usuario
+            setTimeout(renderizarListasDinamicas, 1500);
+        }
+
+        function modificarEurosMisionExistente(idMision,nuevoValor,inputEl){ mostrarToast('La equivalencia € se gestiona de forma global.',1200); }
+
+        function modificarPuntosPremioExistente(idPremio, nuevoValor, inputEl) {
+            var premios = JSON.parse(localStorage.getItem('dinamico_premios')) || [];
+            premios.forEach(p => { if(p.id === idPremio) p.pts = parseInt(nuevoValor || 0); });
+            localStorage.setItem('dinamico_premios', JSON.stringify(premios));
+            triggerFlashEffect(inputEl);
+            setTimeout(renderizarListasDinamicas, 1500);
+        }
+
+        function modificarEurosPremioExistente(idPremio,nuevoValor,inputEl){ mostrarToast('La equivalencia € se gestiona de forma global.',1200); }
+
+        function modificarAtributoRangoExistente(idRango, campo, nuevoValor, inputEl) {
+            var rangos = JSON.parse(localStorage.getItem('dinamico_rangos')) || [];
+            var r = rangos.find(x => x.id === idRango);
+            if(!r) return;
+            if(campo === 'pts') r.pts = Math.max(0, parseInt(nuevoValor || 0));
+            else if(campo === 'color') r.color = nuevoValor;
+            else if(campo === 'txt') {
+                nuevoValor = nuevoValor.trim();
+                if(!nuevoValor) { inputEl.value = r.txt; mostrarAlertaApp('El nombre del rango no puede quedar vacío.'); return; }
+                r.txt = nuevoValor;
+            }
+            localStorage.setItem('dinamico_rangos', JSON.stringify(rangos));
+            triggerFlashEffect(inputEl);
+            actualizarPantalla();
+            if(campo === 'txt') setTimeout(renderizarListasDinamicas, 350);
+        }
+
+        // GESTIÓN DE CATEGORÍAS (REASIGNACIÓN AUTOMÁTICA A "SIN CATEGORÍA")
+        function crearNuevaCategoria() {
+            var id = document.getElementById('new-cat-id').value.trim().toLowerCase();
+            var txt = document.getElementById('new-cat-title').value.trim();
+            
+            if(!id || !txt) { mostrarAlertaApp("Por favor rellena ambos campos."); return; }
+            if(!/^[a-z0-9_-]+$/.test(id)) { mostrarAlertaApp("El ID solo puede contener letras minúsculas, números, guion y guion bajo."); return; }
+            if(id === 'sin-categoria') { mostrarAlertaApp("ID reservado por el sistema."); return; }
+
+            var categorias = JSON.parse(localStorage.getItem('dinamico_categorias')) || [];
+            if(categorias.some(c => c.id === id)) { mostrarAlertaApp("Ese ID de categoría ya existe."); return; }
+
+            categorias.push({id: id, txt: txt});
+            localStorage.setItem('dinamico_categorias', JSON.stringify(categorias));
+            
+            document.getElementById('new-cat-id').value = '';
+            document.getElementById('new-cat-title').value = '';
+            renderizarListasDinamicas();
+            mostrarAlertaApp("¡Categoría añadida correctamente!");
+        }
+
+        async function eliminarCategoriaDirecta(id) {
+            var categorias = JSON.parse(localStorage.getItem('dinamico_categorias')) || [];
+            var misiones = JSON.parse(localStorage.getItem('dinamico_misiones')) || [];
+            var cat = categorias.find(c => c.id === id);
+            if(!cat) return;
+            var afectadas = misiones.filter(m => m.idCat === id);
+            var aviso = afectadas.length ? ' Además, ' + afectadas.length + ' misión(es) pasarán a Sin categoría.' : '';
+            if(!(await confirmarApp('¿Eliminar la categoría "' + cat.txt + '"?' + aviso,'Eliminar categoría'))) return;
+            misiones.forEach(m => { if(m.idCat === id) m.idCat = 'sin-categoria'; });
+            localStorage.setItem('dinamico_misiones', JSON.stringify(misiones));
+            localStorage.setItem('dinamico_categorias', JSON.stringify(categorias.filter(c => c.id !== id)));
+            renderizarListasDinamicas(); mostrarToast('Categoría eliminada', 1100);
+        }
+
+        // ELIMINACIONES DIRECTAS POR ID UNICO
+        async function eliminarMisionDirecta(idMision) {
+            var misiones = JSON.parse(localStorage.getItem('dinamico_misiones')) || [];
+            var m = misiones.find(x => x.id === idMision); if(!m) return;
+            if(!(await confirmarApp('¿Eliminar la misión "' + m.txt + '"?','Eliminar misión'))) return;
+            localStorage.setItem('dinamico_misiones', JSON.stringify(misiones.filter(x => x.id !== idMision)));
+            renderizarListasDinamicas(); mostrarToast('Misión eliminada', 1100);
+        }
+
+        async function eliminarPremioDirecto(idPremio) {
+            var premios = JSON.parse(localStorage.getItem('dinamico_premios')) || [];
+            var p = premios.find(x => x.id === idPremio); if(!p) return;
+            if(!(await confirmarApp('¿Eliminar el premio "' + p.txt + '"?','Eliminar premio'))) return;
+            localStorage.setItem('dinamico_premios', JSON.stringify(premios.filter(x => x.id !== idPremio)));
+            renderizarListasDinamicas(); mostrarToast('Premio eliminado', 1100);
+        }
+
+        async function eliminarRangoDirecto(idRango) {
+            var rangos = JSON.parse(localStorage.getItem('dinamico_rangos')) || [];
+            var r = rangos.find(x => x.id === idRango); if(!r) return;
+            if(!(await confirmarApp('¿Eliminar el rango "' + r.txt + '"?','Eliminar rango'))) return;
+            localStorage.setItem('dinamico_rangos', JSON.stringify(rangos.filter(x => x.id !== idRango)));
+            renderizarListasDinamicas(); actualizarPantalla(); mostrarToast('Rango eliminado', 1100);
+        }
+
+        // CREACIONES DE ELEMENTOS NUEVOS CON IDS REALES
+        function crearNuevoRango() {
+            var texto = document.getElementById('new-rango-text').value.trim();
+            var pts = Math.max(0, parseInt(document.getElementById('new-rango-pts').value || 0));
+            var color = document.getElementById('new-rango-color').value;
+            if(!texto) { mostrarAlertaApp('Introduce un nombre para el rango.'); return; }
+            var rangos = JSON.parse(localStorage.getItem('dinamico_rangos')) || [];
+            rangos.push({id:'rid_' + Date.now(), txt:texto, pts:pts, color:color});
+            localStorage.setItem('dinamico_rangos', JSON.stringify(rangos));
+            document.getElementById('new-rango-text').value = '';
+            document.getElementById('new-rango-pts').value = '50';
+            renderizarListasDinamicas(); actualizarPantalla(); mostrarToast('Rango creado ✓', 1200);
+        }
+
+        function crearNuevaMision(){var texto=document.getElementById('new-mision-text').value.trim(),cat=document.getElementById('new-mision-cat').value,pts=parseFloat(document.getElementById('new-mision-pts').value||0),lim=Math.max(0,parseInt(document.getElementById('new-mision-limite').value||0)),periodo=document.getElementById('new-mision-periodo').value||'dia',usr=document.getElementById('new-mision-user').value||'*',activa=document.getElementById('new-mision-activa').checked;if(!texto)return;var a=JSON.parse(localStorage.getItem('dinamico_misiones'))||[];a.push({id:'mid_'+Date.now(),idCat:cat,txt:texto,pts:pts,euros:null,limite:lim,periodoLimite:periodo,usuario:usr,activa:activa,orden:a.length});localStorage.setItem('dinamico_misiones',JSON.stringify(a));document.getElementById('new-mision-text').value='';document.getElementById('new-mision-limite').value='0';document.getElementById('new-mision-periodo').value='dia';document.getElementById('new-mision-activa').checked=true;renderizarListasDinamicas();mostrarToast('Misión añadida ✓',1200);}
+
+        function crearNuevoPremio(){var texto=document.getElementById('new-premio-text').value.trim(),pts=Math.max(0,parseFloat(document.getElementById('new-premio-pts').value||0)),limite=Math.max(0,parseInt(document.getElementById('new-premio-limite').value||0)),activo=document.getElementById('new-premio-activo').checked;if(!texto)return;var a=JSON.parse(localStorage.getItem('dinamico_premios'))||[];a.push({id:'pid_'+Date.now(),txt:texto,pts:pts,euros:null,activo:activo,limiteCanjes:limite,orden:a.length});localStorage.setItem('dinamico_premios',JSON.stringify(a));document.getElementById('new-premio-text').value='';document.getElementById('new-premio-limite').value='0';document.getElementById('new-premio-activo').checked=true;renderizarListasDinamicas();mostrarToast('Objetivo/premio añadido ✓',1200);}
+
+
+        function construirPaqueteDatos(){var datos={app:'heroes-del-dia',version:5,schema:APP_SCHEMA_VERSION,exportado:new Date().toISOString(),datos:{}};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k!=='mision_backup_automatico'&&(k.startsWith('dinamico_')||k.startsWith('mision_')))datos.datos[k]=localStorage.getItem(k);}return datos;}
+        function crearBackupAutomatico(motivo){var paquete=construirPaqueteDatos();paquete.motivo=motivo||'automático';localStorage.setItem('mision_backup_automatico',JSON.stringify(paquete));mostrarToast('Copia automática creada ✓',1000);return paquete;}
+        async function restaurarBackupAutomatico(){var raw=localStorage.getItem('mision_backup_automatico');if(!raw){mostrarAlertaApp('Todavía no existe una copia automática.');return;}try{var p=JSON.parse(raw);validarBackup(p);if(!(await confirmarApp('Se sustituirán los datos actuales por la última copia automática ('+new Date(p.exportado).toLocaleString()+').','Restaurar copia')))return;Object.keys(p.datos).forEach(k=>localStorage.setItem(k,p.datos[k]));asegurarEstructuraDatos();renderizarUsuariosUI();cargarDatosUsuario();mostrarToast('Copia restaurada ✓',1400);}catch(e){mostrarAlertaApp('La copia automática no es válida: '+e.message);}}
+        function exportarDatos(){var datos=construirPaqueteDatos(),d=new Date(),stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0'),blob=new Blob([JSON.stringify(datos,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='heroes_backup_'+stamp+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),500);mostrarToast('Copia exportada ✓',1200);}
+        function validarBackup(p){if(!p||!Number.isInteger(p.version)||p.version<1||p.version>5||!p.datos||typeof p.datos!=='object'||(p.app&&p.app!=='heroes-del-dia'))throw new Error('Formato o versión no compatibles');['dinamico_categorias','dinamico_misiones','dinamico_premios','dinamico_rangos'].forEach(k=>{if(!(k in p.datos))throw new Error('Falta '+k);var x=JSON.parse(p.datos[k]);if(!Array.isArray(x))throw new Error(k+' no es válido');});if(p.datos.dinamico_usuarios){var u=JSON.parse(p.datos.dinamico_usuarios);if(!Array.isArray(u)||!u.length)throw new Error('Usuarios no válidos');}return true;}
+        function importarDatosDesdeArchivo(input){var archivo=input.files&&input.files[0];if(!archivo)return;var lector=new FileReader();lector.onload=async function(){try{var p=JSON.parse(lector.result);validarBackup(p);var fecha=p.exportado?new Date(p.exportado).toLocaleString():'sin fecha';crearBackupAutomatico('antes de importar');if(!(await confirmarApp('Copia válida (versión '+p.version+', '+fecha+'). Sustituirá los datos actuales.','Importar copia'))){input.value='';return;}Object.keys(p.datos).forEach(k=>localStorage.setItem(k,p.datos[k]));asegurarEstructuraDatos();input.value='';renderizarUsuariosUI();cargarDatosUsuario();mostrarToast('Datos importados ✓',1500);}catch(e){input.value='';mostrarAlertaApp('No se ha podido importar la copia: '+e.message);}};lector.readAsText(archivo);}
+        function exportarHistorialCSV(){var hs=leerJSON('mision_global_historial',[]),cab=['Fecha','Usuario','Tipo','Detalle','Valor','Unidad'],filas=hs.map(h=>[h.ts||h.fecha||'',h.userName||nombreUsuario(h.user),h.tipo,h.detalle,h.pts,(h.unidad==='eur'||(!h.unidad&&esAdolescente(h.user)))?'EUR':'PUNTOS']),csv=[cab,...filas].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n'),blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='heroes_historial_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),500);mostrarToast('Historial CSV exportado ✓',1200);}
+
+        // HISTORIAL E HISTOGRAMAS
+        function fechaAccion(h){if(h.ts){var d=new Date(h.ts);if(!isNaN(d))return d;}var m=String(h.fecha||'').match(/^(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/);if(!m)return null;var d=new Date();d.setMonth(parseInt(m[2])-1,parseInt(m[1]));d.setHours(parseInt(m[3]),parseInt(m[4]),0,0);return d;}
+        function resumenPeriodo(dias,elementId,clase){
+            var box=document.getElementById(elementId);if(!box)return;var desde=Date.now()-dias*86400000;
+            var hs=historialGlobal.filter(h=>{var d=fechaAccion(h);return d&&d.getTime()>=desde;});
+            var mg=hs.filter(h=>h.tipo==='ganado').length,cg=hs.filter(h=>h.tipo==='gastado').length,activos=new Set(hs.map(h=>h.user)).size;
+            var filas=obtenerUsuarios().map(u=>{var uh=hs.filter(h=>h.user===u.id),g=uh.filter(h=>h.tipo==='ganado').reduce((a,h)=>a+(Number(h.pts)||0),0),x=uh.filter(h=>h.tipo==='gastado').reduce((a,h)=>a+(Number(h.pts)||0),0);return `<div class="resumen-usuario-fila"><span>${escaparHTML(u.nombre)} · ${u.modo==='adolescente'?'€':'⭐'}</span><strong>+${formatearNumero(g)} / -${formatearNumero(x)} ${u.modo==='adolescente'?'€':'⭐'}</strong></div>`;}).join('');
+            box.className=clase;box.innerHTML=`<div class="resumen-card">Misiones<strong>${mg}</strong></div><div class="resumen-card">Canjes / retiradas<strong>${cg}</strong></div><div class="resumen-card">Usuarios activos<strong>${activos}</strong></div><div class="resumen-card">Periodo<strong>${dias} días</strong></div><div class="resumen-usuarios">${filas}</div>`;
+        }
+        function renderizarResumenSemanal(){resumenPeriodo(7,'resumen-semanal','resumen-semanal');}
+        function renderizarResumenMensual(){resumenPeriodo(30,'resumen-mensual','resumen-mensual');}
+        function categoriaDeDetalle(detalle){var st=refrescarEstadoApp(),m=st.misiones.find(x=>x.txt===detalle);if(!m)return 'Otros';var c=st.categorias.find(x=>x.id===m.idCat);return c?c.txt:'Sin categoría';}
+        function renderizarEstadisticasCategorias(){var box=document.getElementById('stats-categorias');if(!box)return;var hs=historialGlobal.filter(h=>h.tipo==='ganado'),map={};hs.forEach(h=>{var c=categoriaDeDetalle(h.detalle);if(!map[c])map[c]={acciones:0};map[c].acciones++;});var ent=Object.entries(map).sort((a,b)=>b[1].acciones-a[1].acciones);box.innerHTML=ent.length?ent.map(([k,v])=>`<div class="stat-cat-card"><span>${escaparHTML(k)}</span><strong>${v.acciones} misiones</strong></div>`).join(''):'<p class="estado-vacio">Todavía no hay actividad por categorías.</p>';var canvas=document.getElementById('chartCategorias');if(!canvas||typeof Chart==='undefined')return;if(miGraficoCategorias)miGraficoCategorias.destroy();miGraficoCategorias=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels:ent.map(x=>x[0]),datasets:[{label:'Misiones',data:ent.map(x=>x[1].acciones)}]},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});}
+        function renderizarGraficoEvolucion(){var canvas=document.getElementById('chartEvolucion');if(!canvas||typeof Chart==='undefined')return;var hoy=new Date();hoy.setHours(0,0,0,0);var dias=[],labels=[];for(var i=29;i>=0;i--){var d=new Date(hoy);d.setDate(d.getDate()-i);dias.push(d);labels.push(d.getDate()+'/'+(d.getMonth()+1));}var usuarios=obtenerUsuarios(),datasets=usuarios.map(u=>({label:u.nombre,data:dias.map(d=>historialGlobal.filter(h=>h.user===u.id&&h.tipo==='ganado').reduce((sum,h)=>{var fh=fechaAccion(h);return sum+(fh&&fh>=d&&fh<new Date(d.getTime()+86400000)?1:0);},0)),tension:.25,fill:false}));if(miGraficoEvolucion)miGraficoEvolucion.destroy();miGraficoEvolucion=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'Misiones completadas'}}},plugins:{legend:{display:true}}}});}
+        function renderizarHistorialYGrafico(){renderizarUsuariosUI();renderizarResumenSemanal();renderizarResumenMensual();renderizarEstadisticasCategorias();renderizarGraficoEvolucion();var cont=document.getElementById('lista-historial');if(!cont)return;var fu=document.getElementById('hist-filter-user')?.value||'todos',ft=document.getElementById('hist-filter-type')?.value||'todos',fd=document.getElementById('hist-filter-date')?.value||'',filtrado=historialGlobal.filter(h=>{if(fu!=='todos'&&h.user!==fu)return false;if(ft!=='todos'&&h.tipo!==ft)return false;if(fd){var d=fechaAccion(h);if(!d||d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')!==fd)return false;}return true;});cont.innerHTML=filtrado.length?'':'<p class="estado-vacio">No hay acciones que coincidan con los filtros.</p>';filtrado.forEach(h=>{var g=h.tipo==='ganado',unidad=(h.unidad==='eur'||(!h.unidad&&esAdolescente(h.user)))?' €':' ⭐';cont.insertAdjacentHTML('beforeend','<div class="item-historial '+(g?'ganado':'')+'"><div><strong>['+escaparHTML(h.userName||nombreUsuario(h.user))+']</strong> '+escaparHTML(h.detalle)+'</div><div class="fecha-historial">'+escaparHTML(h.fecha)+' <span style="color:'+(g?'#4caf50':'#d32f2f')+';font-weight:bold;">'+(g?'+':'-')+formatearNumero(h.pts)+unidad+'</span></div></div>');});var us=obtenerUsuarios(),canvas=document.getElementById('chartCompetitivo');if(!canvas||typeof Chart==='undefined')return;if(miGrafico)miGrafico.destroy();miGrafico=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels:us.map(u=>u.nombre),datasets:[{label:'Misiones completadas',data:us.map(u=>historialGlobal.filter(h=>h.user===u.id&&h.tipo==='ganado').length),borderWidth:2,borderRadius:8}]},options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'Misiones completadas'}}},plugins:{legend:{display:false}}}});}
+
+        function modificarPuntosDirecto(user, modo, inputEl) {
+            if(modo === 'p') {
+                var val = parseFloat(document.getElementById('edit-pts-' + user).value || 0);
+                localStorage.setItem('mision_p_' + user, val);
+                if(user === usuarioActual) { puntos = val; }
+            } else {
+                var val = parseFloat(document.getElementById('edit-pts-h-' + user).value || 0);
+                localStorage.setItem('mision_h_pts_' + user, val);
+                if(user === usuarioActual) { puntosHistoricos = val; }
+            }
+            triggerFlashEffect(inputEl);
+            actualizarPantalla();
+        }
+
+        function analizarEstadoDatos(){var st=refrescarEstadoApp(),checks=[];var dup=(arr)=>arr.length!==new Set(arr.map(x=>x.id)).size;checks.push({nivel:dup(st.categorias)||dup(st.misiones)||dup(st.premios)?'error':'ok',titulo:'IDs únicos',texto:dup(st.categorias)||dup(st.misiones)||dup(st.premios)?'Se han detectado IDs duplicados.':'No se detectan IDs duplicados.'});var huer=st.misiones.filter(m=>!st.categorias.some(c=>c.id===m.idCat)&&m.idCat!=='sin-categoria');checks.push({nivel:huer.length?'warn':'ok',titulo:'Misiones sin categoría',texto:huer.length?huer.length+' misión(es) apuntan a una categoría inexistente.':'Todas las misiones tienen una categoría válida.'});var neg=st.misiones.filter(m=>m.pts<0).length+st.premios.filter(p=>p.pts<0).length;checks.push({nivel:neg?'error':'ok',titulo:'Valores negativos',texto:neg?neg+' elemento(s) tienen puntos negativos.':'No hay puntos negativos.'});var cero=st.premios.filter(p=>p.pts===0).length;checks.push({nivel:cero?'warn':'ok',titulo:'Premios de 0 puntos',texto:cero?cero+' premio(s) cuestan 0 puntos.':'No hay premios gratuitos.'});var catsVacias=st.categorias.filter(c=>!st.misiones.some(m=>m.idCat===c.id)).length;checks.push({nivel:catsVacias?'warn':'ok',titulo:'Categorías vacías',texto:catsVacias?catsVacias+' categoría(s) no contienen misiones.':'Todas las categorías contienen misiones.'});var rangos=[...st.rangos].sort((a,b)=>a.pts-b.pts),duplicadosR=rangos.some((r,i)=>i&&r.pts===rangos[i-1].pts);checks.push({nivel:duplicadosR?'warn':'ok',titulo:'Umbrales de rangos',texto:duplicadosR?'Hay rangos con el mismo mínimo de puntos.':'Los umbrales de rangos son coherentes.'});checks.push({nivel:'ok',titulo:'Versión de datos',texto:'Esquema '+(localStorage.getItem('mision_schema_version')||'?')+' / aplicación '+APP_SCHEMA_VERSION+'.'});return checks;}
+        function renderizarEstadoDatos(){var box=document.getElementById('estado-datos-lista');if(!box)return;var checks=analizarEstadoDatos();box.innerHTML=checks.map(c=>'<div class="estado-dato-card '+c.nivel+'"><strong>'+escaparHTML(c.titulo)+'</strong><div style="margin-top:5px;color:#546e7a;">'+escaparHTML(c.texto)+'</div></div>').join('');}
+        function actualizarPinSeguridad(inputEl) {
+            var nuevoPin = inputEl.value.trim();
+            if(nuevoPin) {
+                localStorage.setItem('mision_pin_seguridad', nuevoPin);
+                triggerFlashEffect(inputEl);
+            }
+        }
+
+        // CONTROL DE ACCESOS Y PANTALLAS
+        function comprobarPinYAbirConfig() {
+            var panelConfig = document.getElementById('bloque-config');
+            if(!panelConfig.classList.contains('oculto')) {
+                cerrarConfigYVolver();
+                return;
+            }
+            document.getElementById('input-modal-pin-value').value = '';
+            document.getElementById('modal-pin').style.display = 'flex';
+            document.getElementById('input-modal-pin-value').focus();
+        }
+
+        function verificarPinModal() {
+            var pinGuardado = localStorage.getItem('mision_pin_seguridad') || '18681';
+            var intento = document.getElementById('input-modal-pin-value').value.trim();
+            
+            if(intento === pinGuardado) {
+                document.getElementById('modal-pin').style.display = 'none';
+                abrirConfigPanel();
+            } else {
+                mostrarAlertaApp("❌ PIN Incorrecto. Acceso denegado.");
+                document.getElementById('input-modal-pin-value').value = '';
+            }
+        }
+
+        function cancelarAccesoPin() { document.getElementById('modal-pin').style.display = 'none'; }
+
+        function abrirConfigPanel() {
+            document.getElementById('bloque-misiones').classList.add('oculto');
+            document.getElementById('bloque-premios').classList.add('oculto');
+            document.getElementById('bloque-buscador').classList.add('oculto');
+            
+            document.getElementById('bloque-config').classList.remove('oculto');
+            document.getElementById('btn-config').classList.add('active');
+            document.getElementById('menu-principal-tabs').classList.add('oculto');
+            verSubSeccionConfig('seguridad');
+        }
+
+        function verSubSeccionConfig(subSeccion) {
+            var subtabs = ['seguridad', 'usuarios', 'graficos', 'rangos', 'categorias', 'misiones', 'premios', 'datos'];
+            subtabs.forEach(tab => {
+                document.getElementById('subtab-' + (tab === 'misiones' || tab === 'premios' || tab === 'categorias' ? tab + '-cfg' : tab)).classList.remove('active');
+                document.getElementById('sub-cfg-' + tab).classList.add('oculto');
+            });
+
+            document.getElementById('subtab-' + (subSeccion === 'misiones' || subSeccion === 'premios' || subSeccion === 'categorias' ? subSeccion + '-cfg' : subSeccion)).classList.add('active');
+            document.getElementById('sub-cfg-' + subSeccion).classList.remove('oculto');
+
+            if (subSeccion === 'graficos') renderizarHistorialYGrafico();
+            if (subSeccion === 'datos') renderizarEstadoDatos();
+        }
+
+        function cerrarConfigYVolver() {
+            document.getElementById('bloque-config').classList.add('oculto');
+            document.getElementById('btn-config').classList.remove('active');
+            document.getElementById('menu-principal-tabs').classList.remove('oculto');
+            verPantalla('misiones');
+        }
+
+        function verPantalla(pantalla) {
+            document.getElementById('bloque-config').classList.add('oculto');
+            document.getElementById('btn-config').classList.remove('active');
+            document.getElementById('menu-principal-tabs').classList.remove('oculto');
+
+            var misiones = document.getElementById('bloque-misiones');
+            var premios = document.getElementById('bloque-premios');
+            var buscador = document.getElementById('bloque-buscador');
+            
+            var btnMisiones = document.getElementById('tab-misiones');
+            var btnPremios = document.getElementById('tab-premios');
+
+            misiones.classList.add('oculto'); premios.classList.add('oculto'); buscador.classList.add('oculto');
+            btnMisiones.classList.remove('active'); btnPremios.classList.remove('active');
+
+            if (pantalla === 'misiones') { 
+                misiones.classList.remove('oculto'); 
+                buscador.classList.remove('oculto');
+                btnMisiones.classList.add('active'); 
+                renderizarListasDinamicas();
+            }
+            else if (pantalla === 'premios') { 
+                premios.classList.remove('oculto'); 
+                btnPremios.classList.add('active'); 
+            }
+        }
+
+        function animarGanancia(origen, valor, userId) {
+            if(!origen || !document.body) return;
+            origen.classList.remove('mision-pulsada'); void origen.offsetWidth; origen.classList.add('mision-pulsada');
+            var badge=document.createElement('span'); badge.className='ganancia-flotante'; badge.textContent='+'+formatearValor(valor,userId);
+            var r=origen.getBoundingClientRect(); badge.style.left=(r.right-86)+'px'; badge.style.top=(r.top+window.scrollY+8)+'px'; document.body.appendChild(badge);
+            setTimeout(()=>badge.remove(),850); setTimeout(()=>origen.classList.remove('mision-pulsada'),420);
+        }
+        function marcarAvatarSeleccionado(){
+            document.querySelectorAll('.grid-avatar .opcion').forEach(function(el){el.classList.toggle('seleccionado',el.textContent.trim()===String(avatar).trim());});
+        }
+        function abrirSelector() { document.getElementById('selector').style.display = 'flex'; marcarAvatarSeleccionado(); }
+        function cerrarSelector() { document.getElementById('selector').style.display = 'none'; }
+        function cambiarAvatar(emoji) { avatar = emoji; guardarDatosUsuario(); actualizarPantalla(); marcarAvatarSeleccionado(); cerrarSelector(); }
+
+        async function ejecutarResetSelector(){var target=document.getElementById('cfg-usuario-reset').value,us=obtenerUsuarios(),ids=target==='__todos__'?us.map(u=>u.id):[target];crearBackupAutomatico('antes de reinicio');if(!(await confirmarApp('Se reiniciarán puntos, avatar, límites y canjes del usuario seleccionado.','Reiniciar datos')))return;var hist=JSON.parse(localStorage.getItem('mision_global_historial')||'[]'),lim=JSON.parse(localStorage.getItem('mision_registro_limites')||'{}'),can=JSON.parse(localStorage.getItem('mision_registro_premios')||'{}');ids.forEach(id=>{localStorage.setItem('mision_p_'+id,0);localStorage.setItem('mision_h_pts_'+id,0);localStorage.setItem('mision_a_'+id,'👤');hist=hist.filter(h=>h.user!==id);Object.keys(lim).filter(k=>k.includes('_'+id+'_')).forEach(k=>delete lim[k]);Object.keys(can).filter(k=>k.startsWith(id+'_')).forEach(k=>delete can[k]);});localStorage.setItem('mision_global_historial',JSON.stringify(hist));localStorage.setItem('mision_registro_limites',JSON.stringify(lim));localStorage.setItem('mision_registro_premios',JSON.stringify(can));cargarDatosUsuario();mostrarToast('Reinicio completado ✓',1300);}
+
+
+
+        // ===== SUPABASE: LOGIN PROPIO + SINCRONIZACIÓN MULTIDISPOSITIVO =====
+        const CLOUD_URL = 'https://xoerbgbevkeyazpaonpr.supabase.co';
+        const CLOUD_KEY = 'sb_publishable_CZbwQxkHU8iuYoIdniqolA_uLEWwIAR';
+        const CLOUD_FUNCTION_URL = CLOUD_URL + '/functions/v1/marjan-auth-sync';
+        const CLOUD_TOKEN_KEY = 'cloud_custom_token';
+        const CLOUD_USER_KEY = 'cloud_custom_username';
+        let cloudToken = localStorage.getItem(CLOUD_TOKEN_KEY) || '';
+        let cloudUsername = localStorage.getItem(CLOUD_USER_KEY) || '';
+        let cloudSyncTimer = null, cloudApplying = false, cloudLastUpdated = null, cloudPollTimer = null;
+
+        function esClaveSincronizable(k){
+            return !!k && (k.startsWith('dinamico_') || k.startsWith('mision_')) && k !== 'mision_backup_automatico';
+        }
+        function estadoLocalParaNube(){
+            const out={};
+            for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(esClaveSincronizable(k)) out[k]=localStorage.getItem(k); }
+            return out;
+        }
+        function setSyncEstado(texto,tipo){
+            const el=document.getElementById('sync-badge'); if(!el)return;
+            el.textContent=texto; el.className='sync-badge '+(tipo||'sync-warn');
+        }
+        function mostrarAuth(mostrar){
+            const gate=document.getElementById('auth-gate'), bar=document.getElementById('auth-session-bar');
+            if(gate) gate.style.display=mostrar?'flex':'none';
+            if(bar) bar.style.display=mostrar?'none':'flex';
+        }
+        function authMensaje(t){ const e=document.getElementById('auth-msg'); if(e)e.textContent=t||''; }
+        function mensajeErrorCloud(code){
+            const m={
+                invalid_username:'El usuario debe tener entre 3 y 32 caracteres: letras, números, punto, guion o guion bajo.',
+                invalid_pin:'El PIN debe contener entre 4 y 12 números.',
+                invalid_credentials:'Usuario o PIN incorrectos.',
+                username_taken:'Ese usuario ya existe.',
+                registration_closed:'El acceso familiar ya está creado. Usa Entrar con el mismo usuario y PIN.',
+                invalid_session:'La sesión ha caducado. Vuelve a entrar.',
+                state_too_large:'Los datos son demasiado grandes para sincronizarlos.',
+                server_error:'Error del servidor. Inténtalo de nuevo.'
+            };
+            return m[code]||'No se ha podido completar la operación.';
+        }
+        async function cloudRequest(action, extra={}){
+            const res=await fetch(CLOUD_FUNCTION_URL,{
+                method:'POST',
+                headers:{'Content-Type':'application/json','apikey':CLOUD_KEY},
+                body:JSON.stringify({action,...extra})
+            });
+            let data={}; try{data=await res.json();}catch(e){}
+            if(!res.ok) throw {code:data.error||'server_error',status:res.status};
+            return data;
+        }
+        function guardarSesionCloud(data){
+            cloudToken=data.token||''; cloudUsername=data.username||'';
+            localStorage.setItem(CLOUD_TOKEN_KEY,cloudToken);
+            localStorage.setItem(CLOUD_USER_KEY,cloudUsername);
+        }
+        function limpiarSesionCloud(){
+            cloudToken=''; cloudUsername='';
+            localStorage.removeItem(CLOUD_TOKEN_KEY); localStorage.removeItem(CLOUD_USER_KEY);
+        }
+        async function iniciarSesionCloud(){
+            const username=document.getElementById('auth-username').value.trim().toLowerCase(), pin=document.getElementById('auth-pin').value.trim();
+            if(!username||!pin){authMensaje('Introduce usuario y PIN.');return;}
+            authMensaje('Accediendo…');
+            try{
+                const data=await cloudRequest('login',{username,pin});
+                guardarSesionCloud(data); document.getElementById('auth-pin').value=''; authMensaje(''); await iniciarNubeTrasLogin();
+            }catch(e){authMensaje(mensajeErrorCloud(e.code));}
+        }
+        async function registrarCuentaCloud(){
+            const username=document.getElementById('auth-username').value.trim().toLowerCase(), pin=document.getElementById('auth-pin').value.trim();
+            if(!username||!pin){authMensaje('Introduce usuario y un PIN de 4 a 12 números.');return;}
+            authMensaje('Creando acceso familiar…');
+            try{
+                const data=await cloudRequest('register',{username,pin});
+                guardarSesionCloud(data); document.getElementById('auth-pin').value=''; authMensaje(''); await iniciarNubeTrasLogin();
+            }catch(e){authMensaje(mensajeErrorCloud(e.code));}
+        }
+        async function cerrarSesionCloud(){
+            try{ if(cloudToken) await cloudRequest('logout',{token:cloudToken}); }catch(e){}
+            limpiarSesionCloud(); mostrarAuth(true); setSyncEstado('Nube: sesión cerrada','sync-warn'); if(cloudPollTimer)clearInterval(cloudPollTimer);
+        }
+
+        async function subirEstadoNube(){
+            if(!cloudToken||cloudApplying)return;
+            setSyncEstado('Nube: sincronizando…','sync-warn');
+            try{
+                const data=await cloudRequest('save_state',{token:cloudToken,data:estadoLocalParaNube()});
+                cloudLastUpdated=data.updated_at||cloudLastUpdated; setSyncEstado('Nube: sincronizado','sync-ok');
+            }catch(e){
+                if(e.code==='invalid_session'){limpiarSesionCloud();mostrarAuth(true);setSyncEstado('Nube: sesión caducada','sync-error');return;}
+                console.error(e);setSyncEstado('Nube: error','sync-error');
+            }
+        }
+        function programarSyncNube(){
+            if(!cloudToken||cloudApplying)return; clearTimeout(cloudSyncTimer);
+            cloudSyncTimer=setTimeout(subirEstadoNube,500);
+        }
+        async function aplicarEstadoNube(obj){
+            cloudApplying=true;
+            try{
+                Object.keys(localStorage).filter(esClaveSincronizable).forEach(k=>localStorage.removeItem(k));
+                Object.entries(obj||{}).forEach(([k,v])=>{ if(esClaveSincronizable(k)) localStorage.setItem(k,v); });
+                asegurarEstructuraDatos(); renderizarUsuariosUI(); cargarDatosUsuario();
+            }finally{ cloudApplying=false; }
+        }
+        async function cargarEstadoNubeInicial(){
+            try{
+                const data=await cloudRequest('get_state',{token:cloudToken});
+                if(data.data&&Object.keys(data.data).length){
+                    cloudLastUpdated=data.updated_at; await aplicarEstadoNube(data.data);
+                }else{ await subirEstadoNube(); }
+            }catch(e){
+                if(e.code==='invalid_session'){limpiarSesionCloud();mostrarAuth(true);setSyncEstado('Nube: sesión caducada','sync-error');return;}
+                console.error(e);setSyncEstado('Nube: error','sync-error');
+            }
+        }
+        async function comprobarCambiosNube(){
+            if(!cloudToken||cloudApplying)return;
+            try{
+                const data=await cloudRequest('get_state',{token:cloudToken});
+                if(data.updated_at && data.updated_at!==cloudLastUpdated){
+                    cloudLastUpdated=data.updated_at; await aplicarEstadoNube(data.data||{}); setSyncEstado('Nube: actualizado','sync-ok');
+                }
+            }catch(e){ if(e.code==='invalid_session'){limpiarSesionCloud();mostrarAuth(true);setSyncEstado('Nube: sesión caducada','sync-error');} }
+        }
+        async function iniciarNubeTrasLogin(){
+            mostrarAuth(false); setSyncEstado('Nube: cargando…','sync-warn');
+            await cargarEstadoNubeInicial();
+            if(!cloudToken)return;
+            if(cloudPollTimer)clearInterval(cloudPollTimer);
+            cloudPollTimer=setInterval(comprobarCambiosNube,4000);
+        }
+
+        // Cualquier cambio relevante en localStorage programa una subida a la nube.
+        const _setItemOriginal=Storage.prototype.setItem, _removeItemOriginal=Storage.prototype.removeItem;
+        Storage.prototype.setItem=function(k,v){ _setItemOriginal.call(this,k,v); if(this===localStorage&&esClaveSincronizable(k))programarSyncNube(); };
+        Storage.prototype.removeItem=function(k){ _removeItemOriginal.call(this,k); if(this===localStorage&&esClaveSincronizable(k))programarSyncNube(); };
+
+        async function bootstrapCloud(){
+            asegurarEstructuraDatos(); renderizarUsuariosUI(); cargarDatosUsuario();
+            if(cloudToken){
+                if(cloudUsername){const u=document.getElementById('auth-username');if(u)u.value=cloudUsername;}
+                await iniciarNubeTrasLogin();
+            }else{ mostrarAuth(true); setSyncEstado('Nube: inicia sesión','sync-warn'); }
+        }
+
+        document.getElementById('input-modal-pin-value').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') { verificarPinModal(); }
+        });
+
+        // Inicio automático con sincronización en la nube
+        bootstrapCloud();
+    </script>
+</body>
+</html>
