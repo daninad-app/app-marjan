@@ -1003,7 +1003,117 @@
             .login-profile strong { font-size:1rem; }
             .login-profile small { font-size:.65rem; }
         }
-    </style>
+    
+
+        /* FIX MÓVIL CONFIGURACIÓN DE MISIONES - 2026-09-14 */
+        .gestion-mision,
+        .gestion-mision-top,
+        .gestion-mision-controles { min-width:0; max-width:100%; }
+
+        .gestion-mision-top > .drag-handle {
+            grid-column:auto;
+            grid-row:auto;
+            margin:0;
+            justify-self:center;
+            align-self:center;
+        }
+
+        .gestion-mision-top > .input-texto-editable {
+            width:100% !important;
+            min-width:0 !important;
+            max-width:100% !important;
+            flex:none !important;
+        }
+
+        .gestion-mision-top > .btn-borrar {
+            margin:0;
+            justify-self:end;
+            align-self:center;
+            flex:none;
+        }
+
+        @media (max-width:600px) {
+            .config-box,
+            .lista-gestion,
+            .gestion-mision { width:100%; max-width:100%; min-width:0; }
+
+            .gestion-mision {
+                padding:10px !important;
+                overflow:hidden;
+            }
+
+            .gestion-mision-top {
+                display:grid;
+                grid-template-columns:22px minmax(0,1fr) 34px;
+                gap:7px;
+                width:100%;
+                margin-bottom:10px;
+                align-items:center;
+            }
+
+            .gestion-mision-top > .drag-handle {
+                grid-column:1;
+                grid-row:1;
+                margin:0 !important;
+                padding:2px 0;
+                justify-self:center;
+            }
+
+            .gestion-mision-top > .input-texto-editable {
+                grid-column:2;
+                grid-row:1;
+                width:100% !important;
+                min-width:0 !important;
+                height:42px;
+                min-height:42px;
+                padding:8px 10px;
+                font-size:.93rem;
+                overflow:hidden;
+                text-overflow:ellipsis;
+            }
+
+            .gestion-mision-top > .btn-borrar {
+                grid-column:3;
+                grid-row:1;
+                width:34px;
+                height:34px;
+                margin:0 !important;
+                justify-self:end;
+            }
+
+            .gestion-mision-controles {
+                width:100%;
+                max-width:100%;
+                min-width:0;
+                grid-template-columns:repeat(2,minmax(0,1fr));
+                gap:8px;
+            }
+
+            .gestion-mision-controles .campo-bloque,
+            .gestion-mision-controles .campo-bloque input,
+            .gestion-mision-controles .campo-bloque select,
+            .gestion-mision-controles .switch-inline,
+            .gestion-mision-controles .equivalencia-badge {
+                min-width:0;
+                max-width:100%;
+                width:100%;
+            }
+
+            .gestion-mision-controles .campo-categoria,
+            .gestion-mision-controles .campo-usuario { grid-column:1 / -1; }
+        }
+
+        @media (max-width:390px) {
+            .gestion-mision-controles { grid-template-columns:1fr; }
+            .gestion-mision-controles .campo-categoria,
+            .gestion-mision-controles .campo-usuario,
+            .gestion-mision-controles .campo-estado,
+            .gestion-mision-controles .campo-limite,
+            .gestion-mision-controles .campo-periodo,
+            .gestion-mision-controles .campo-estrellas,
+            .gestion-mision-controles .campo-equivale { grid-column:1; }
+        }
+</style>
 </head>
 <body class="vista-compacta">
     <div id="auth-gate" class="auth-gate auth-hero-login">
