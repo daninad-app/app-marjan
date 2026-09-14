@@ -919,21 +919,137 @@
             .modal-pin-blanco { width:calc(100vw - 20px); padding:18px; }
         }
 
+
+
+        /* LOGIN HÉROES DEL DÍA */
+        .auth-hero-login {
+            overflow:auto;
+            min-height:100dvh;
+            background:
+                radial-gradient(circle at 12% 16%, rgba(255,255,255,.36) 0 7%, transparent 7.2%),
+                radial-gradient(circle at 90% 19%, rgba(255,255,255,.24) 0 6%, transparent 6.2%),
+                linear-gradient(155deg,#72b7ef 0%,#a9d7f7 48%,#eef5e8 100%);
+            position:fixed;
+        }
+        .auth-hero-login::before,
+        .auth-hero-login::after {
+            content:""; position:absolute; left:-8%; right:-8%; bottom:-8%; height:37%; pointer-events:none;
+            clip-path:polygon(0 70%,9% 44%,17% 66%,28% 28%,39% 63%,51% 35%,63% 68%,76% 25%,88% 60%,100% 38%,100% 100%,0 100%);
+        }
+        .auth-hero-login::before { background:linear-gradient(180deg,rgba(98,149,164,.34),rgba(60,115,111,.48)); bottom:0; }
+        .auth-hero-login::after { background:linear-gradient(180deg,#7cb981,#5a9464); bottom:-14%; height:32%; filter:saturate(.85); }
+        .auth-card-hero {
+            position:relative; z-index:3; width:min(570px,calc(100vw - 28px));
+            padding:48px 54px 28px; border-radius:28px; text-align:center;
+            background:rgba(255,255,255,.96); border:1px solid rgba(255,255,255,.88);
+            box-shadow:0 30px 80px rgba(35,77,112,.22); backdrop-filter:blur(10px);
+        }
+        .auth-card-hero h1 { margin:0; color:#10223e; font-size:clamp(2rem,5vw,2.75rem); letter-spacing:-.035em; line-height:1.05; }
+        .auth-card-hero .login-subtitle { margin:9px 0 24px; color:#70859a; font-size:1rem; }
+        .login-star { position:absolute; top:-31px; left:50%; transform:translateX(-50%) rotate(-8deg); color:#ffc737; font-size:72px; line-height:1; filter:drop-shadow(0 8px 7px rgba(162,108,8,.22)); text-shadow:0 2px 0 #edaf22; }
+        .login-profiles { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 8px; }
+        .login-profile { min-width:0; border:1px solid #e0e8ef; background:#fff; border-radius:19px; padding:16px 12px 14px; cursor:pointer; box-shadow:0 7px 20px rgba(37,68,95,.07); transition:.18s ease; color:#1b2d44; }
+        .login-profile:hover { transform:translateY(-2px); box-shadow:0 11px 24px rgba(37,68,95,.11); border-color:#b9d5ed; }
+        .login-profile.selected { border-color:#4598e8; box-shadow:0 0 0 3px rgba(69,152,232,.13),0 10px 24px rgba(37,68,95,.10); background:#f8fcff; }
+        .login-avatar { width:82px; height:82px; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; border-radius:50%; overflow:hidden; border:2px solid rgba(71,145,214,.22); box-shadow:0 5px 14px rgba(32,67,96,.10); }
+        .login-avatar svg { width:100%; height:100%; display:block; }
+        .avatar-dani { background:linear-gradient(145deg,#e8f4fd,#cfe5f6); }
+        .avatar-lorena { background:linear-gradient(145deg,#fdeaf0,#f7d8e2); }
+        .login-profile strong { display:block; font-size:1.13rem; }
+        .login-profile small { display:block; margin-top:4px; color:#91a0ad; font-size:.72rem; font-weight:700; }
+        .login-other-toggle { border:0; background:transparent; color:#7d8d9a; font-size:.74rem; font-weight:700; cursor:pointer; padding:4px 8px 8px; }
+        .login-other-toggle:hover { color:#3f84c2; text-decoration:underline; }
+        .login-other-wrap { text-align:left; margin:2px 0 11px; }
+        .login-other-wrap label { margin:0 0 5px; font-size:.72rem; }
+        .login-other-wrap input { min-height:42px; }
+        .login-pin-hidden { position:absolute !important; width:1px !important; height:1px !important; opacity:0 !important; pointer-events:none !important; }
+        .login-pin-title { margin-top:8px; color:#233a58; font-weight:800; font-size:1.03rem; }
+        .login-pin-dots { display:flex; justify-content:center; gap:9px; margin:10px 0 14px; }
+        .login-pin-dots span { width:14px; height:14px; border-radius:50%; background:#d9e4ec; border:1px solid #c9d7e1; transition:.12s ease; }
+        .login-pin-dots span.filled { background:#647f96; border-color:#647f96; transform:scale(1.04); }
+        .login-keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:min(330px,100%); margin:0 auto 14px; }
+        .login-keypad button { min-height:48px; border:1px solid #e2e9ef; background:#fff; border-radius:12px; color:#24394f; font-size:1.12rem; font-weight:800; cursor:pointer; box-shadow:0 4px 11px rgba(35,63,87,.055); transition:.12s ease; }
+        .login-keypad button:hover { background:#f4f9fd; border-color:#c9dceb; }
+        .login-keypad button:active { transform:scale(.97); }
+        .login-keypad .key-delete { color:#536f85; font-size:1.2rem; }
+        .login-enter { min-height:50px; border-radius:13px !important; background:linear-gradient(90deg,#3c91e6,#4a98e5) !important; font-size:1rem; box-shadow:0 10px 24px rgba(60,145,230,.24); }
+        .login-enter span { font-size:1.3rem; margin-left:8px; vertical-align:-1px; }
+        .auth-card-hero .auth-msg { min-height:20px; margin:8px 0 0; color:#b34c4c; }
+        .login-footer { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:9px; padding-top:17px; border-top:1px solid #edf1f4; color:#71869b; font-size:.82rem; font-weight:700; }
+        .login-footer span { color:#f5b51d; }
+        .login-deco { position:absolute; z-index:2; color:rgba(21,57,87,.62); font-weight:700; font-size:1rem; line-height:1.35; font-style:italic; transform:rotate(-5deg); }
+        .login-deco-left { left:4vw; top:10vh; text-align:left; color:rgba(255,255,255,.88); font-size:1.05rem; }
+        .login-deco-right { right:5vw; top:7vh; transform:rotate(4deg); }
+        .login-signpost { position:absolute; z-index:2; left:4.5vw; bottom:10vh; display:flex; flex-direction:column; gap:7px; align-items:flex-start; transform:rotate(-2deg); }
+        .login-signpost::before { content:""; position:absolute; width:10px; height:145px; background:#8f623b; left:21px; top:-13px; border-radius:5px; z-index:-1; }
+        .login-signpost span { display:block; padding:7px 16px; min-width:112px; border-radius:5px; background:linear-gradient(180deg,#c98a4d,#aa6d35); color:#54351f; font-size:.67rem; font-weight:900; box-shadow:0 3px 8px rgba(64,44,28,.16); }
+        @media (max-width:900px){ .login-deco,.login-signpost{display:none;} }
+        @media (max-width:600px){
+            .auth-hero-login { align-items:flex-start; padding:38px 10px 18px; }
+            .auth-card-hero { width:100%; padding:42px 18px 22px; border-radius:22px; }
+            .login-star { font-size:62px; top:-27px; }
+            .auth-card-hero h1 { font-size:2rem; }
+            .auth-card-hero .login-subtitle { font-size:.9rem; margin-bottom:18px; }
+            .login-avatar { width:70px; height:70px; font-size:37px; }
+            .login-profile { padding:13px 8px 12px; }
+            .login-keypad { width:100%; max-width:310px; }
+            .login-keypad button { min-height:46px; }
+        }
+        @media (max-width:360px){
+            .auth-hero-login { padding-left:7px; padding-right:7px; }
+            .auth-card-hero { padding-left:13px; padding-right:13px; }
+            .login-profiles { gap:8px; }
+            .login-avatar { width:61px; height:61px; font-size:32px; }
+            .login-profile strong { font-size:1rem; }
+            .login-profile small { font-size:.65rem; }
+        }
     </style>
 </head>
 <body class="vista-compacta">
-    <div id="auth-gate" class="auth-gate">
-        <div class="auth-card">
-            <h1>Acceso familiar</h1>
-            <p>Inicia sesión para mantener los datos sincronizados en todos tus dispositivos.</p>
-            <label for="auth-username">Usuario familiar</label>
-            <input id="auth-username" type="text" autocomplete="username" placeholder="Ej. marjan" maxlength="32">
-            <label for="auth-pin">PIN</label>
-            <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" placeholder="4–12 dígitos" maxlength="12">
+    <div id="auth-gate" class="auth-gate auth-hero-login">
+        <div class="login-deco login-deco-left">Pequeñas acciones,<br><strong>grandes héroes.</strong></div>
+        <div class="login-deco login-deco-right">Hoy también cuenta ♡</div>
+        <div class="login-signpost" aria-hidden="true"><span>DISCIPLINA</span><span>DIVERSIÓN</span><span>LOGROS</span></div>
+        <div class="auth-card auth-card-hero">
+            <div class="login-star" aria-hidden="true">★</div>
+            <h1>Héroes del Día</h1>
+            <p class="login-subtitle">Elige tu perfil para continuar tu misión</p>
+
+            <div class="login-profiles" role="group" aria-label="Selecciona tu perfil">
+                <button type="button" class="login-profile" data-user="dani" onclick="seleccionarPerfilLogin('dani',this)">
+                    <span class="login-avatar avatar-dani" aria-hidden="true"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="dBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eaf6ff"/><stop offset="1" stop-color="#b8daf2"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#dBg)"/><path d="M22 100c2-19 13-29 28-29s26 10 28 29" fill="#4b8ec9"/><ellipse cx="50" cy="48" rx="24" ry="28" fill="#f3c8a9"/><path d="M27 47c0-20 11-31 25-31 12 0 21 7 24 18-8-5-17-5-26-2-8 3-15 8-23 15z" fill="#6b432d"/><path d="M33 31c5-11 17-17 29-13 6 2 11 6 14 13-8-5-16-7-24-5-7 1-13 3-19 5z" fill="#7a4b30"/><circle cx="41" cy="49" r="2.8" fill="#243447"/><circle cx="59" cy="49" r="2.8" fill="#243447"/><path d="M43 61c4 4 10 4 14 0" fill="none" stroke="#b56b62" stroke-width="2.2" stroke-linecap="round"/><path d="M37 43c3-2 6-2 9-1M54 42c3-1 6-1 9 1" fill="none" stroke="#5d3d2b" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    <strong>Dani</strong>
+                    <small>Listo para la misión</small>
+                </button>
+                <button type="button" class="login-profile" data-user="lorena" onclick="seleccionarPerfilLogin('lorena',this)">
+                    <span class="login-avatar avatar-lorena" aria-hidden="true"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1f5"/><stop offset="1" stop-color="#f4c8d7"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#lBg)"/><path d="M20 100c3-18 14-29 30-29s27 11 30 29" fill="#db7f99"/><path d="M24 52c0-24 10-38 27-38 18 0 29 14 29 38 0 15-6 26-12 32H32c-6-7-8-19-8-32z" fill="#5b3a2f"/><ellipse cx="50" cy="48" rx="22" ry="27" fill="#f3c9ad"/><path d="M29 42c3-17 11-26 23-26 11 0 20 7 25 22-8-6-17-8-28-5-7 2-13 5-20 9z" fill="#6a4637"/><path d="M31 36c5-10 13-17 24-17 8 0 15 3 21 10-10-4-20-4-28-1-7 2-12 5-17 8z" fill="#795040"/><circle cx="42" cy="49" r="2.8" fill="#2b3441"/><circle cx="59" cy="49" r="2.8" fill="#2b3441"/><path d="M43 61c4 4 10 4 14 0" fill="none" stroke="#b56b62" stroke-width="2.2" stroke-linecap="round"/><path d="M37 43c3-2 6-2 9-1M54 42c3-1 6-1 9 1" fill="none" stroke="#5d3d2b" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    <strong>Lorena</strong>
+                    <small>Listo para la misión</small>
+                </button>
+            </div>
+
+            <button type="button" class="login-other-toggle" onclick="mostrarOtroUsuarioLogin()">Otro usuario</button>
+            <div id="login-other-wrap" class="login-other-wrap" hidden>
+                <label for="auth-username">Usuario</label>
+                <input id="auth-username" type="text" autocomplete="username" placeholder="Nombre de usuario" maxlength="32" oninput="limpiarSeleccionPerfilLogin()">
+            </div>
+            <input id="auth-pin" class="login-pin-hidden" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" maxlength="12" aria-label="PIN">
+
+            <div class="login-pin-title">Introduce tu PIN</div>
+            <div id="login-pin-dots" class="login-pin-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+            <div class="login-keypad" aria-label="Teclado numérico">
+                <button type="button" onclick="teclaPinLogin('1')">1</button><button type="button" onclick="teclaPinLogin('2')">2</button><button type="button" onclick="teclaPinLogin('3')">3</button>
+                <button type="button" onclick="teclaPinLogin('4')">4</button><button type="button" onclick="teclaPinLogin('5')">5</button><button type="button" onclick="teclaPinLogin('6')">6</button>
+                <button type="button" onclick="teclaPinLogin('7')">7</button><button type="button" onclick="teclaPinLogin('8')">8</button><button type="button" onclick="teclaPinLogin('9')">9</button>
+                <span></span><button type="button" onclick="teclaPinLogin('0')">0</button><button type="button" class="key-delete" onclick="borrarPinLogin()" aria-label="Borrar">⌫</button>
+            </div>
+
             <div class="auth-actions">
-                <button class="auth-primary" type="button" onclick="iniciarSesionCloud()">Entrar</button>
+                <button class="auth-primary login-enter" type="button" onclick="iniciarSesionCloud()">Entrar <span>→</span></button>
             </div>
             <div id="auth-msg" class="auth-msg"></div>
+            <div class="login-footer"><span>⚡</span> Nuevas misiones te esperan</div>
         </div>
     </div>
     <div id="auth-session-bar" class="auth-session-bar"><button type="button" onclick="cerrarSesionCloud()">Cerrar sesión</button></div>
@@ -2166,13 +2282,42 @@ function iconoPapeleraSVG() {
             cloudToken=''; cloudUsername='';
             localStorage.removeItem(CLOUD_TOKEN_KEY); localStorage.removeItem(CLOUD_USER_KEY);
         }
+        function seleccionarPerfilLogin(username, btn){
+            const input=document.getElementById('auth-username');
+            if(input) input.value=String(username||'').toLowerCase();
+            document.querySelectorAll('.login-profile').forEach(b=>b.classList.remove('selected'));
+            if(btn) btn.classList.add('selected');
+            const otro=document.getElementById('login-other-wrap'); if(otro) otro.hidden=true;
+            authMensaje('');
+        }
+        function limpiarSeleccionPerfilLogin(){ document.querySelectorAll('.login-profile').forEach(b=>b.classList.remove('selected')); }
+        function mostrarOtroUsuarioLogin(){
+            const wrap=document.getElementById('login-other-wrap'); if(!wrap)return;
+            wrap.hidden=!wrap.hidden;
+            if(!wrap.hidden){ limpiarSeleccionPerfilLogin(); setTimeout(()=>document.getElementById('auth-username')?.focus(),0); }
+        }
+        function actualizarPinVisual(){
+            const pin=document.getElementById('auth-pin'); if(!pin)return;
+            const n=pin.value.length;
+            document.querySelectorAll('#login-pin-dots span').forEach((d,i)=>d.classList.toggle('filled',i<Math.min(n,4)));
+        }
+        function teclaPinLogin(n){
+            const pin=document.getElementById('auth-pin'); if(!pin||pin.value.length>=12)return;
+            pin.value+=String(n); actualizarPinVisual(); authMensaje('');
+            if(pin.value.length>=4 && pin.value.length===12) iniciarSesionCloud();
+        }
+        function borrarPinLogin(){
+            const pin=document.getElementById('auth-pin'); if(!pin)return;
+            pin.value=pin.value.slice(0,-1); actualizarPinVisual(); authMensaje('');
+        }
+
         async function iniciarSesionCloud(){
             const username=document.getElementById('auth-username').value.trim().toLowerCase(), pin=document.getElementById('auth-pin').value.trim();
             if(!username||!pin){authMensaje('Introduce usuario y PIN.');return;}
             authMensaje('Accediendo…');
             try{
                 const data=await cloudRequest('login',{username,pin});
-                guardarSesionCloud(data); document.getElementById('auth-pin').value=''; authMensaje(''); await iniciarNubeTrasLogin();
+                guardarSesionCloud(data); document.getElementById('auth-pin').value=''; actualizarPinVisual(); authMensaje(''); await iniciarNubeTrasLogin();
             }catch(e){authMensaje(mensajeErrorCloud(e.code));}
         }
         async function cerrarSesionCloud(){
@@ -2240,7 +2385,7 @@ function iconoPapeleraSVG() {
             localStorage.removeItem('mision_pin_seguridad');
             asegurarEstructuraDatos(); renderizarUsuariosUI(); cargarDatosUsuario();
             if(cloudToken){
-                if(cloudUsername){const u=document.getElementById('auth-username');if(u)u.value=cloudUsername;}
+                if(cloudUsername){const u=document.getElementById('auth-username');if(u)u.value=cloudUsername; const b=document.querySelector('.login-profile[data-user="'+cloudUsername.replace(/"/g,'')+'"]'); if(b){document.querySelectorAll('.login-profile').forEach(x=>x.classList.remove('selected')); b.classList.add('selected');}}
                 await iniciarNubeTrasLogin();
             }else{ mostrarAuth(true); setSyncEstado('Nube: inicia sesión','sync-warn'); }
         }
